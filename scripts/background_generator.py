@@ -1,26 +1,117 @@
 #!/usr/bin/env python3
 """
-BrandKit Background Generator — 背景生成槽
+BrandKit Background Generator — v0.3.0
 对称于 Content Pipeline 的 Copy Generator。
-仅 scene-spec 标记 `regenerate_background: true` 的场景调用。
 
-输出: .build/backgrounds/{scene}-{variant}.png + metadata
+支持两种模式:
+1. U1-Fast API: 真实图像生成 (默认, 需要 SENSENOVA_API_KEY)
+2. SVG placeholder: 离线占位 (--placeholder 标志)
+
+仅 scene-spec 标记 `regenerate_background: true` 的场景调用。
+输出: .build/backgrounds/{scene}-{hash}.png + metadata
 """
 
 import json
 import os
-import sys
 import hashlib
-import subprocess
-import tempfile
+import time
+import requests
 from pathlib import Path
 
 
+# ── SenseNova U1-Fast Configuration ──
+U1_FAST_URL = "https://token.sensenova.cn/v1/images/generations"
+U1_FAST_MODEL = "sensenova-u1-fast"
+U1_FAST_SIZE = "2048x2048"
+U1_FAST_MAX_CHARS = 3800  # Leave buffer for style lock
+
+
+def call_u1_fast(prompt: str, api_key: str) -> bytes:
+    """Call SenseNova U1-Fast image generation API. Returns PNG bytes."""
+    # Truncate prompt if needed
+    if len(prompt) > U1_FAST_MAX_CHARS:
+        prompt = prompt[:U1_FAST_MAX_CHARS]
+
+    resp = requests.post(
+        U1_FAST_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": U1_FAST_MODEL,
+            "prompt": prompt,
+            "size": U1_FAST_SIZE,
+            "n": 1,
+            "response_format": "b64_json",
+        },
+        timeout=120,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    # U1-Fast returns b64_json
+    b64 = data.get("data", [{}])[0].get("b64_json", "")
+    if not b64:
+        raise RuntimeError("U1-Fast returned no image data")
+
+    import base64
+    return base64.b64decode(b64)
+
+
+def build_background_prompt(scene_name: str, brand_colors: dict, product_name: str,
+                           scene_desc: str = "") -> str:
+    """Build prompt for background image generation."""
+    primary = brand_colors.get("primary", "#111827")
+    accent = brand_colors.get("accent", "#8B7355")
+    background = brand_colors.get("background", "#F7F4EF")
+
+    brand_style = (
+        f"Brand: premium audio, urban professionals. "
+        f"Colors: primary {primary}, accent {accent}, background {background}. "
+        f"Style: minimal, precise, calm. "
+        f"No text, no logo, no watermarks. "
+        f"Empty scene for product photography compositing."
+    )
+
+    if not scene_desc:
+        scene_prompts = {
+            "lifestyle": (
+                "Urban lifestyle background for premium audio product photography. "
+                "Warm ambient lighting, modern city apartment interior, "
+                "soft natural light through window, wooden desk surface. "
+                "Mood: calm, sophisticated, premium. "
+            ),
+            "packshot": (
+                "Studio product photography background. "
+                "Smooth dark surface with soft reflections. "
+                "Clean, minimal, technical atmosphere. "
+                "Rim lighting from behind, soft fill from front. "
+            ),
+            "hero": (
+                "Clean white studio background for product photography. "
+                "Soft even lighting, no shadows, no textures. "
+                "Pure minimal commercial photography backdrop."
+            ),
+            "cover": (
+                "Editorial cover background. "
+                "Warm tones, minimal composition. "
+                "Premium magazine style, sophisticated mood."
+            ),
+        }
+        scene_desc = scene_prompts.get(scene_name, scene_prompts["hero"])
+
+    return f"{scene_desc} {brand_style}"
+
+
 def generate_background(scene_name, brand_colors, product_name, scene_desc="",
-                        provider="sensenova", output_dir=None):
+                        output_dir=None, use_placeholder=False):
     """
     Generate a background image for a scene.
+
     Returns dict with background info.
+    Primary mode: U1-Fast API (real image generation).
+    Fallback: SVG placeholder (use_placeholder=True or API unavailable).
     """
     if output_dir is None:
         output_dir = Path(".build") / "backgrounds"
@@ -28,84 +119,87 @@ def generate_background(scene_name, brand_colors, product_name, scene_desc="",
         output_dir = Path(output_dir) / "backgrounds"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build scene description prompt
-    primary_color = brand_colors.get("primary", "#111827")
-    accent_color = brand_colors.get("accent", "#8B7355")
+    prompt = build_background_prompt(scene_name, brand_colors, product_name, scene_desc)
 
-    if not scene_desc:
-        scene_prompts = {
-            "hero": f"Minimal product studio background. Soft gradient from {primary_color} to {accent_color}. Clean, premium, professional.",
-            "lifestyle": f"Urban lifestyle scene, warm ambient lighting, premium audio product use context. Color palette: {primary_color}, {accent_color}. Modern city atmosphere.",
-            "cover": f"Editorial cover background. Warm tones with {accent_color} accents. Minimal, sophisticated, premium feel.",
-            "detail": f"Macro photography backdrop. Dark smooth surface with soft reflections. Technical, precise atmosphere.",
-        }
-        scene_desc = scene_prompts.get(scene_name, scene_prompts["hero"])
+    bg_type = "generated_u1fast"
+    file_path = None
+    content = ""
+    scene_hash = hashlib.md5(prompt.encode()).hexdigest()[:8]
 
-    # For M2, generate a gradient/pattern SVG as background (works without image API)
-    # In production, this would call the image generation API
-    bg_type = "generated_svg"
+    api_key = os.environ.get("SENSENOVA_API_KEY") or os.environ.get("CUSTOM_API_KEY")
 
-    # Create gradient SVG
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    if not use_placeholder and api_key:
+        try:
+            print(f"  [BG] Calling U1-Fast for '{scene_name}'...")
+            png_bytes = call_u1_fast(prompt, api_key)
+            file_path = output_dir / f"{scene_name}-{scene_hash}.png"
+            with open(file_path, "wb") as f:
+                f.write(png_bytes)
+            print(f"  [BG] U1-Fast OK → {file_path} ({len(png_bytes)} bytes)")
+            bg_type = "u1_fast"
+        except Exception as e:
+            print(f"  [BG] U1-Fast failed: {e}, falling back to SVG placeholder")
+            bg_type = "generated_svg_placeholder"
+
+    if bg_type != "u1_fast":
+        # SVG placeholder fallback
+        primary = brand_colors.get("primary", "#111827")
+        accent = brand_colors.get("accent", "#8B7355")
+        content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <defs>
     <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:{primary_color};stop-opacity:0.08" />
-      <stop offset="50%" style="stop-color:{accent_color};stop-opacity:0.04" />
-      <stop offset="100%" style="stop-color:{primary_color};stop-opacity:0.12" />
+      <stop offset="0%" style="stop-color:{primary};stop-opacity:0.08" />
+      <stop offset="50%" style="stop-color:{accent};stop-opacity:0.04" />
+      <stop offset="100%" style="stop-color:{primary};stop-opacity:0.12" />
     </linearGradient>
     <radialGradient id="bg-glow" cx="50%" cy="40%" r="50%">
-      <stop offset="0%" style="stop-color:{accent_color};stop-opacity:0.15" />
-      <stop offset="100%" style="stop-color:{primary_color};stop-opacity:0" />
+      <stop offset="0%" style="stop-color:{accent};stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:{primary};stop-opacity:0" />
     </radialGradient>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg-grad)" />
   <rect width="100%" height="100%" fill="url(#bg-glow)" />
 </svg>'''
 
-    # Hash the scene description for version tracking
-    scene_hash = hashlib.md5(scene_desc.encode()).hexdigest()[:8]
-
-    # Save background metadata
     bg_info = {
         "scene": scene_name,
         "type": bg_type,
-        "description": scene_desc,
+        "description": prompt[:100],
         "hash": scene_hash,
-        "content": svg,
-        "generated_at": None,  # Set when actually generated via API
-        "product_fixed": True,  # Product foreground is ALWAYS fixed
+        "content": content,
+        "file_path": str(file_path) if file_path else None,
+        "generation_mode": "api" if bg_type == "u1_fast" else "placeholder",
+        "product_fixed": True,
     }
-
     return bg_info
 
 
 def inject_background(html, bg_info):
     """Inject background into HTML template."""
     if not bg_info:
-        # Fallback: solid brand background
-        return html.replace("{background_style}", "background: var(--brand-background);") \
-                   .replace("{background_content}", "")
+        html = html.replace("{background_style}", "background: var(--brand-background);")
+        html = html.replace("{background_content}", "")
+        return html
 
     bg_type = bg_info.get("type", "solid")
 
-    if bg_type == "generated_svg":
-        # Inject SVG inline
-        svg_content = bg_info.get("content", "")
-        # Escape for HTML injection
-        style = "background: var(--brand-background);"
-        content = svg_content
-        html = html.replace("{background_style}", style)
-        html = html.replace("{background_content}", content)
-    elif bg_type == "image_file":
-        # Inject image file
-        style = "background: var(--brand-background);"
-        content = f'<img src="file://{bg_info.get("file_path", "")}" alt="background">'
-        html = html.replace("{background_style}", style)
-        html = html.replace("{background_content}", content)
+    if bg_type == "u1_fast":
+        # Real generated image
+        file_path = bg_info.get("file_path")
+        if file_path and os.path.exists(file_path):
+            style = "background: var(--brand-background);"
+            content = f'<img src="file://{Path(file_path).resolve()}" alt="generated background" data-gen-mode="u1_fast">'
+            html = html.replace("{background_style}", style)
+            html = html.replace("{background_content}", content)
+        else:
+            html = html.replace("{background_style}", "background: var(--brand-background);")
+            html = html.replace("{background_content}", "")
     else:
-        # Solid color fallback
-        html = html.replace("{background_style}", "background: var(--brand-background);")
-        html = html.replace("{background_content}", "")
+        # SVG placeholder or solid
+        style = "background: var(--brand-background);"
+        content = bg_info.get("content", "")
+        html = html.replace("{background_style}", style)
+        html = html.replace("{background_content}", content)
 
     return html
 
@@ -114,9 +208,9 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="BrandKit Background Generator")
     parser.add_argument("--resolved", default=".build/resolved-task.json")
-    parser.add_argument("--scene", default="hero")
-    parser.add_argument("--desc", default="", help="Scene description for generation")
-    parser.add_argument("--dry-run", action="store_true", help="Print prompts without API calls")
+    parser.add_argument("--scene", default="lifestyle")
+    parser.add_argument("--desc", default="", help="Scene description")
+    parser.add_argument("--placeholder", action="store_true", help="Use SVG placeholder instead of API")
     args = parser.parse_args()
 
     with open(args.resolved) as f:
@@ -127,10 +221,9 @@ def main():
     product = resolved.get("product", {})
     product_name = product.get("name", "Product")
 
-    bg = generate_background(args.scene, colors, product_name, args.desc)
-    print(f"[OK] Background generated: {args.scene} (type: {bg['type']}, hash: {bg['hash']})")
-    print(f"     Product foreground: FIXED (never modified)")
-    print(json.dumps(bg, indent=2, ensure_ascii=False))
+    bg = generate_background(args.scene, colors, product_name, args.desc,
+                             use_placeholder=args.placeholder)
+    print(json.dumps({k: v for k, v in bg.items() if k != "content"}, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

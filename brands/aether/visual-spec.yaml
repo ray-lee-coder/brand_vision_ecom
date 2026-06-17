@@ -34,6 +34,15 @@ scene_policy:
     html_dominant: false
     regenerate_background: true
     preserve_product_asset: true
+    background_prompt: "Urban lifestyle scene for premium audio product"
+  feature-grid:
+    html_dominant: true
+    regenerate_background: false
+  packshot:
+    html_dominant: false
+    regenerate_background: true
+    preserve_product_asset: true
+    background_prompt: "Studio product photography background, soft reflections"
   detail:
     html_dominant: true
     macro_generation: optional

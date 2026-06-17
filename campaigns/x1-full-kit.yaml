@@ -1,0 +1,26 @@
+campaign:
+  name: x1-full-kit
+  brand_ref: brands/aether/brand-core.yaml
+  product_ref: brands/aether/products/x1.yaml
+  objective: full_visual_kit
+  audience: urban_commuters
+
+outputs:
+  visual:
+    - type: hero
+      channel: tmall
+      format: png
+    - type: lifestyle
+      channel: xiaohongshu
+      format: png
+    - type: feature-grid
+      channel: tmall
+      format: png
+    - type: packshot
+      channel: tmall
+      format: png
+  content:
+    - type: product_title
+      channel: tmall
+    - type: bullet_points
+      channel: tmall

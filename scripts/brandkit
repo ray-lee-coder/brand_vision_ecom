@@ -39,8 +39,8 @@ case "$CMD" in
     echo "[BUILD] Compiling specs from: $CAMPAIGN"
     python3 scripts/compile.py "$CAMPAIGN"
 
-    echo "[BUILD] Rendering visual... ($([ -n "$OFFLINE" ] && echo 'offline' || echo 'full'))"
-    python3 scripts/render_visual.py $ALLOW_PLACEHOLDER
+    echo "[BUILD] Rendering visual... ($([ -n "$OFFLINE" ] && echo 'placeholder' || echo 'full'))"
+    python3 scripts/render_visual.py $ALLOW_PLACEHOLDER $([ -n "$OFFLINE" ] && echo '--placeholder')
     VISUAL_EXIT=$?
     if [ $VISUAL_EXIT -ne 0 ]; then
       echo "[FAIL] Visual render failed"

@@ -62,7 +62,7 @@ def get_scene_policy(visual_spec, scene_name):
     }
 
 
-def render_html(resolved, output_dir, message_plan, allow_placeholder=False):
+def render_html(resolved, output_dir, message_plan, allow_placeholder=False, use_placeholder_bg=False):
     """Compose HTML with foreground/background separation.
     Reads headline/subtitle from message-plan.json (not hardcoded)."""
     campaign = resolved.get("campaign", {})
@@ -119,7 +119,11 @@ def render_html(resolved, output_dir, message_plan, allow_placeholder=False):
         # Generate background (independent of product)
         bg_info = None
         if policy["regenerate_background"] and HAS_BG_GEN:
-            bg_info = generate_background(scene, colors, product_facts.get("name", brand_name))
+            bg_prompt = policy.get("background_prompt", "")
+            bg_info = generate_background(
+                scene, colors, product_facts.get("name", brand_name),
+                scene_desc=bg_prompt, use_placeholder=use_placeholder_bg,
+            )
         if bg_info:
             html = inject_background(html, bg_info)
         else:
@@ -202,6 +206,7 @@ def main():
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--skip-png", action="store_true")
     parser.add_argument("--allow-placeholder", action="store_true")
+    parser.add_argument("--placeholder", action="store_true", help="Use SVG placeholder backgrounds instead of API")
     args = parser.parse_args()
 
     resolved_path = Path(args.resolved)
@@ -223,7 +228,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        rendered = render_html(resolved, output_dir, message_plan, args.allow_placeholder)
+        rendered = render_html(resolved, output_dir, message_plan, args.allow_placeholder, args.placeholder)
     except RuntimeError as e:
         print(f"[FAIL] {e}")
         sys.exit(1)
