@@ -1,0 +1,23 @@
+{
+  "id": "hero-image",
+  "name": "白底/纯色底产品主图",
+  "description": "最常用的电商主图——产品居中、纯色背景、棚拍灯光",
+  "defaults": {
+    "background": "clean white background",
+    "lighting": "soft diffused studio lighting",
+    "composition": "centered, front view"
+  },
+  "prompt_template": {
+    "type": "product photography",
+    "subject": "{product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "8K, commercial e-commerce photography"
+  },
+  "variants": {
+    "luxury": { "description": "高端奢侈品", "overrides": { "lighting": "Rembrandt lighting, subtle rim light", "background": "gradient from dark to light, premium feel" } },
+    "minimal": { "description": "极简现代", "overrides": { "lighting": "bright natural light", "background": "pure white, minimal" } },
+    "tech": { "description": "科技感", "overrides": { "lighting": "dramatic side lighting", "background": "dark minimalist" } }
+  }
+}

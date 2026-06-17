@@ -1,0 +1,23 @@
+{
+  "id": "multi-angle-grid",
+  "name": "多角度网格图",
+  "description": "一个产品从多个角度拍摄，以 2×2 或 1×4 网格排列",
+  "defaults": {
+    "background": "consistent pure white per cell",
+    "lighting": "uniform studio lighting across all angles",
+    "composition": "2x2 grid, four angles, consistent scale"
+  },
+  "prompt_template": {
+    "type": "multi-angle product grid",
+    "subject": "grid layout showing {product_description} from four angles: front view, three-quarter view, side view, detail view",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial product catalog photography"
+  },
+  "variants": {
+    "2x2": { "description": "2×2 四视图", "overrides": { "composition": "2x2 grid, four distinct product angles, equal cell size, thin borders" } },
+    "1x4": { "description": "1×4 横排", "overrides": { "composition": "horizontal row of 4 progressive angles, consistent scale across frames" } },
+    "colors": { "description": "多色展示", "overrides": { "composition": "grid showing product in 4 different color variants, same angle" } }
+  }
+}

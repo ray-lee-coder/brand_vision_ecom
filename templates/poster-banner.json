@@ -1,0 +1,23 @@
+{
+  "id": "poster-banner",
+  "name": "海报/Banner",
+  "description": "营销海报式图片，带文字留白区域，适合促销和广告",
+  "defaults": {
+    "background": "solid brand color or gradient backdrop",
+    "lighting": "dramatic editorial lighting",
+    "composition": "hero product with negative space for typography"
+  },
+  "prompt_template": {
+    "type": "editorial poster photography",
+    "subject": "campaign poster image of {product_description}, heroic presentation",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "editorial campaign photography, billboard quality"
+  },
+  "variants": {
+    "sale": { "description": "促销海报", "overrides": { "composition": "product with top third empty space for sale text, promotional energy" } },
+    "editorial": { "description": "编辑风格", "overrides": { "background": "dark premium background", "lighting": "cinematic side lighting, dramatic shadows", "composition": "product as art subject, generous negative space" } },
+    "launch": { "description": "新品发布", "overrides": { "background": "gradient from brand color to dark", "composition": "product centered, space above for launch headline" } }
+  }
+}

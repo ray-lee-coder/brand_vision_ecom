@@ -1,0 +1,29 @@
+# Aether — 品牌 VI 配置
+# 虚构音频科技品牌。海军蓝底色 + 暖金强调色，精确工程与人文温度的平衡。
+
+brand:
+  name: "Aether"
+  description: "Premium audio-visual technology brand. Dark navy canvas with warm gold accents — the balance of precision engineering and human warmth."
+  tone: "cool"
+
+  colors:
+    primary: "#D4AF37"    # 暖金色 — CTA、品牌元素、强调元素
+    accent: "#D4AF37"     # 暖金色 — 卖点标签、高亮
+    canvas: "#FFFFFF"     # 纯白 — 产品照背景
+    text: "#F7F5F0"       # 米白 — 文字
+    surface: "#1B2A4A"    # 深海军蓝 — 表面色
+    border: "#9DB3CD"     # 灰蓝 — 边框
+
+  typography:
+    display: "PP Mori"
+    body: "Inter"
+    mono: "JetBrains Mono"
+
+  imagery:
+    primary_lighting: "editorial_cinematic"
+    default_angle: "three_quarter"
+    product_frame_ratio: 0.40
+    background: "pure_white"
+    retouching: "moderate"
+    min_views: 5
+    required_angles: ["front", "three_quarter_left", "three_quarter_right", "side_left", "detail"]

@@ -1,0 +1,23 @@
+{
+  "id": "lifestyle-scene",
+  "name": "场景氛围图 / Lifestyle",
+  "description": "产品在实际使用环境中的场景图，强调氛围和生活方式",
+  "defaults": {
+    "background": "lifestyle environment, natural setting",
+    "lighting": "warm natural light, golden hour feel",
+    "composition": "asymmetric, environmental context"
+  },
+  "prompt_template": {
+    "type": "lifestyle photography",
+    "subject": "{product_description} in use, lifestyle setting",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial lifestyle photography, editorial quality"
+  },
+  "variants": {
+    "indoor": { "description": "室内生活场景", "overrides": { "background": "modern interior, warm home setting", "lighting": "natural window light" } },
+    "outdoor": { "description": "户外场景", "overrides": { "background": "natural outdoor environment", "lighting": "golden hour sunlight" } },
+    "studio": { "description": "棚拍场景", "overrides": { "background": "stylish studio set with props", "lighting": "controlled studio lighting" } }
+  }
+}

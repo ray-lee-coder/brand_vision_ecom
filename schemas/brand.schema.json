@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://brand-vision-ecom.dev/schemas/brand.schema.json",
+  "title": "Brand Visual Identity",
+  "description": "Brand colors, typography, and visual tone for e-commerce product photography. Written once, used by every AI image generation.",
+  "type": "object",
+  "required": ["brand"],
+  "properties": {
+    "brand": {
+      "type": "object",
+      "required": ["name", "colors", "typography"],
+      "properties": {
+        "name": { "type": "string", "description": "品牌名称" },
+        "colors": {
+          "type": "object",
+          "required": ["primary", "canvas"],
+          "description": "品牌色板。所有颜色用 hex 值（#FFFFFF），不用颜色名",
+          "properties": {
+            "primary":  { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "品牌主色：CTA 按钮、品牌标志、强调元素" },
+            "accent":   { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "强调色：卖点标签、价格标记（可选，默认=primary）" },
+            "canvas":   { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "画面背景色：产品照的背景白/灰底色" },
+            "text":     { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "文字色：图片内文字的默认颜色" },
+            "surface":  { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "表面色：卡片、面板的背景（可选）" },
+            "border":   { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "边框色：分割线、边框（可选）" }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "required": ["display", "body"],
+          "properties": {
+            "display": { "type": "string", "description": "展示字体，如 Nike Futura ND" },
+            "body":    { "type": "string", "description": "正文字体，如 Inter" },
+            "mono":    { "type": "string", "description": "等宽字体（可选），如 JetBrains Mono" }
+          }
+        },
+        "tone": {
+          "type": "string",
+          "enum": ["warm", "cool", "neutral"],
+          "default": "neutral",
+          "description": "冷暖调。warm=金色/暖黄/奶油色板, cool=蓝/银/灰/纯黑, neutral=不确定时用"
+        },
+        "description": {
+          "type": "string",
+          "description": "品牌风格一句话描述。会被嵌入 Style Lock 的 Prompt 第一段"
+        }
+      }
+    }
+  }
+}

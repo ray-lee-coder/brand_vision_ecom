@@ -1,0 +1,29 @@
+# Nike — 品牌 VI 配置
+# 运动品牌。纯黑白单色系统，编辑级极致对比。
+
+brand:
+  name: "Nike"
+  description: "Photography-first commerce system. Athletic, kinetic, absolute: pure black, pure white. Maximum editorial expression in the imagery, maximum mechanical restraint everywhere else."
+  tone: "cool"
+
+  colors:
+    primary: "#111111"    # 纯黑 — CTA、品牌主色
+    accent: "#111111"     # 纯黑 — 强调色（单色系统，同主色）
+    canvas: "#FFFFFF"     # 纯白 — 产品照背景
+    text: "#111111"       # 纯黑 — 文字
+    surface: "#F5F5F5"    # 浅灰 — 软云表面
+    border: "#E5E5E5"     # 线灰 — 边框
+
+  typography:
+    display: "Nike Futura ND"
+    body: "Helvetica Now Text"
+    mono: ""
+
+  imagery:
+    primary_lighting: "studio_soft"
+    default_angle: "three_quarter"
+    product_frame_ratio: 0.35
+    background: "pure_white"
+    retouching: "light"
+    min_views: 5
+    required_angles: ["front", "three_quarter_left", "three_quarter_right", "side_left", "detail"]

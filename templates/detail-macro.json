@@ -1,0 +1,23 @@
+{
+  "id": "detail-macro",
+  "name": "细节微距图",
+  "description": "近距离特写展示产品材质、工艺、细节",
+  "defaults": {
+    "background": "product surface fills frame",
+    "lighting": "macro ring light, shadowless",
+    "composition": "extreme close-up, 1:1 macro, texture focus"
+  },
+  "prompt_template": {
+    "type": "macro product photography",
+    "subject": "extreme close-up, {product_description} detail, texture and craftsmanship",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "8K macro photography, extreme detail"
+  },
+  "variants": {
+    "material": { "description": "材质纹理", "overrides": { "composition": "close-up texture shot, fabric/material grain visible" } },
+    "stitching": { "description": "缝线/接缝", "overrides": { "composition": "seam detail, stitching close-up, craftsmanship focus" } },
+    "hardware": { "description": "五金/配件", "overrides": { "lighting": "specular lighting on metal parts", "composition": "hardware detail, metal finish close-up" } }
+  }
+}
