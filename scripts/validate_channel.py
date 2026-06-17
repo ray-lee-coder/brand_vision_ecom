@@ -180,6 +180,7 @@ def generate_diff_report(tmall_results, xhs_results):
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="BrandKit Channel Validator")
+    parser.add_argument("--allow-warnings", action="store_true", help="Don't fail on warnings")
     parser.add_argument("--output-dir", default="output", help="Output directory")
     parser.add_argument("--verify-dir", default=".build/verify", help="Verify report directory")
     args = parser.parse_args()
@@ -188,8 +189,14 @@ def main():
     verify_dir = Path(args.verify_dir)
     verify_dir.mkdir(parents=True, exist_ok=True)
 
-    # Group content files by channel
-    md_files = [f for f in output_dir.glob("*.md") if not f.name.startswith("._")]
+    # Group content files by channel from campaign dirs
+    md_files = []
+    for campaign_dir in output_dir.iterdir():
+        if not campaign_dir.is_dir() or campaign_dir.name.startswith("."):
+            continue
+        content_dir = campaign_dir / "content"
+        if content_dir.exists():
+            md_files.extend(f for f in content_dir.glob("*.md") if not f.name.startswith("._"))
 
     channel_groups = {}
     for f in md_files:
@@ -309,7 +316,7 @@ def main():
     print(f"  Failed: {report['diff_summary']['failed']}")
     print(f"{'='*50}")
 
-    if report["diff_summary"]["failed"] > 0:
+    if report["diff_summary"]["failed"] > 0 and not args.allow_warnings:
         sys.exit(1)
 
 

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-BrandKit Content Renderer — Content Pipeline → Markdown
-M0-A+: 使用 Copy Generator 替代模板拼接，全量 Claim Provenance
+BrandKit Content Renderer (v0.3.0)
+FIXES:
+- Reads message-plan.json for primary_benefit/theme (不再本地重构)
+- Outputs to output/{campaign}/content/
+- Falls through to template fallback only with --dry-run
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 
-# Try to import copy generator
 sys.path.insert(0, str(Path(__file__).parent))
 try:
     from copy_generator import generate_copy
@@ -18,25 +19,29 @@ except ImportError:
     HAS_COPY_GEN = False
 
 
-def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
-    """Generate content from resolved task + message plan."""
+def render_content(resolved, output_dir, message_plan, dry_run=False):
+    """Generate content from message-plan (single source of truth)."""
     campaign = resolved.get("campaign", {})
     brand = resolved.get("brand", {})
     content_spec = resolved.get("content_spec", {})
     product = resolved.get("product", {})
-    channels = resolved.get("channels", {})
     output_targets = resolved.get("output_targets", [])
 
     facts = product.get("facts", {})
     product_name = product.get("name", "Product")
 
-    message_hierarchy = content_spec.get("message_hierarchy", {})
-    primary_benefit = message_hierarchy.get("primary_benefit", "")
-    secondary_benefits = message_hierarchy.get("secondary_benefits", [])
+    # Read from message-plan (NOT locally reconstructed)
+    primary_benefit = message_plan.get("primary_benefit", {}).get("statement", "")
+    secondary_benefits = [b.get("statement", "") for b in message_plan.get("secondary_benefits", [])]
+    campaign_theme = message_plan.get("campaign_theme", "")
+    brand_name = message_plan.get("brand_name", brand.get("name", "Brand"))
 
     claim_rules = content_spec.get("claim_rules", {})
 
     content_targets = [t for t in output_targets if t["type"] == "content"]
+    campaign_name = campaign.get("name", "default")
+    out_dir = output_dir / campaign_name / "content"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     rendered = []
 
@@ -45,55 +50,33 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
         channel = target.get("channel", "unknown")
         constraints = target.get("constraints", {})
 
-        # Build message plan for this output
-        message_plan = {
-            "campaign_theme": "quiet_precision",
-            "primary_benefit": {
-                "id": primary_benefit,
-                "statement": primary_benefit,
-            },
-            "secondary_benefits": [{"id": b, "statement": b} for b in secondary_benefits],
-            "proof_points": [],
-            "call_to_action": {
-                "tmall": "立即了解",
-                "xiaohongshu": "查看通勤实测",
-            },
-        }
+        # Build proof points from message plan
+        proof_points = message_plan.get("proof_points", [])
 
-        # Build proof points from facts
-        for fact_key, fact_data in facts.items():
-            message_plan["proof_points"].append({
-                "claim_ref": f"facts.{fact_key}",
-                "value": f"{fact_data.get('value', '')}{fact_data.get('unit', '')}",
-                "source_ref": fact_data.get("source", {}).get("ref", "unknown"),
-                "status": fact_data.get("status", "unknown"),
-            })
-
-        # Try Copy Generator first
-        copy_result = None
+        # Try Copy Generator unless --dry-run
+        claims = []
         if HAS_COPY_GEN and not dry_run:
             try:
                 copy_result = generate_copy(
                     message_plan, facts, claim_rules, constraints,
-                    content_type, channel, provider,
+                    content_type, channel, "sensenova",
                 )
+                if copy_result and copy_result.get("text"):
+                    text = copy_result["text"]
+                    claims = copy_result.get("claims", [])
+                else:
+                    raise RuntimeError("Copy generator returned empty text")
             except Exception as e:
-                print(f"[WARN] Copy generator failed for {channel}-{content_type}: {e}")
-                copy_result = None
-
-        if copy_result and copy_result.get("text"):
-            text = copy_result["text"]
-            claims = copy_result.get("claims", [])
+                print(f"[FAIL] Copy generator failed for {channel}-{content_type}: {e}")
+                sys.exit(1)
         else:
-            # Fallback: template stitching (same as before)
-            claims = []
+            # Template fallback (only in --dry-run mode)
             if content_type == "product_title":
-                title = f"{product_name} {primary_benefit} — 618限时特惠"
+                title = f"{product_name} {primary_benefit} — 限时特惠"
                 title_max = constraints.get("product_title", {}).get("max_chars", 60)
                 if len(title) > title_max:
                     title = title[:title_max-3] + "..."
                 text = title
-                # Provenance for title
                 for fact_key, fact_data in facts.items():
                     claims.append({
                         "claim": f"{fact_data.get('value', '')}{fact_data.get('unit', '')}",
@@ -101,11 +84,10 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
                         "source_ref": fact_data.get("source", {}).get("ref", "unknown"),
                         "status": fact_data.get("status", "unknown"),
                     })
-                    break  # Just first fact
+                    break
 
             elif content_type == "bullet_points":
                 bullet_count = constraints.get("bullets", {}).get("count", 5)
-                max_chars = constraints.get("bullets", {}).get("max_chars_each", 28)
                 bullets = []
                 for fact_key, fact_data in facts.items():
                     val = fact_data.get("value", "")
@@ -150,7 +132,6 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
                     f"618活动入手性价比超高，通勤党可以冲。\n\n"
                     f"#降噪耳机 #通勤好物 #Aether"
                 )
-                # Provenance for note
                 for fact_key, fact_data in facts.items():
                     claims.append({
                         "claim": f"{fact_data.get('value', '')}{fact_data.get('unit', '')}",
@@ -165,7 +146,6 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
                 if len(title) > title_max:
                     title = title[:title_max-3] + "..."
                 text = title
-                # Provenance for title
                 for fact_key, fact_data in facts.items():
                     claims.append({
                         "claim": f"{fact_data.get('value', '')}{fact_data.get('unit', '')}",
@@ -180,29 +160,30 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
 
         # Write content
         filename = f"{channel}-{content_type}.md"
-        content_path = output_dir / filename
+        content_path = out_dir / filename
         with open(content_path, "w") as f:
             f.write(text + "\n")
         print(f"[OK] Content → {content_path}")
 
         # Write provenance
-        if claims:
-            prov_filename = f"{channel}-{content_type}.provenance.json"
-            prov_path = output_dir / prov_filename
-            with open(prov_path, "w") as f:
-                json.dump({
-                    "file": filename,
-                    "channel": channel,
-                    "content_type": content_type,
-                    "claims": claims,
-                }, f, indent=2, ensure_ascii=False)
-            print(f"[OK] Provenance → {prov_path}")
+        prov_filename = f"{channel}-{content_type}.provenance.json"
+        prov_path = out_dir / prov_filename
+        with open(prov_path, "w") as f:
+            json.dump({
+                "file": filename,
+                "channel": channel,
+                "content_type": content_type,
+                "primary_benefit_source": "message-plan.json",
+                "claims": claims,
+            }, f, indent=2, ensure_ascii=False)
+        print(f"[OK] Provenance → {prov_path}")
 
         rendered.append({
             "channel": channel,
             "content_type": content_type,
             "file": str(content_path),
             "claims_count": len(claims),
+            "generation_mode": "copy_generator" if (HAS_COPY_GEN and not dry_run) else ("dry_run_fallback" if dry_run else "template_fallback"),
         })
 
     return rendered
@@ -210,28 +191,47 @@ def render_content(resolved, output_dir, provider="sensenova", dry_run=False):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="BrandKit Content Renderer")
-    parser.add_argument("--resolved", default=".build/resolved-task.json", help="Resolved task JSON")
-    parser.add_argument("--output-dir", default="output", help="Output directory")
-    parser.add_argument("--provider", default="sensenova", help="LLM provider for copy generation")
-    parser.add_argument("--dry-run", action="store_true", help="Use template fallback, no API calls")
+    parser = argparse.ArgumentParser(description="BrandKit Content Renderer (v0.3.0)")
+    parser.add_argument("--resolved", default=".build/resolved-task.json")
+    parser.add_argument("--message-plan", default=".build/message-plan.json")
+    parser.add_argument("--output-dir", default="output")
+    parser.add_argument("--dry-run", action="store_true", help="Use template fallback instead of LLM")
     args = parser.parse_args()
 
     resolved_path = Path(args.resolved)
     if not resolved_path.exists():
         print(f"[ERROR] Resolved task not found: {resolved_path}")
-        print("        Run compile.py first.")
         sys.exit(1)
 
     with open(resolved_path) as f:
         resolved = json.load(f)
 
+    # Load message-plan
+    msg_path = Path(args.message_plan)
+    message_plan = {}
+    if msg_path.exists():
+        with open(msg_path) as f:
+            message_plan = json.load(f)
+    else:
+        print(f"[WARN] message-plan.json not found, using fallback")
+        content_spec = resolved.get("content_spec", {})
+        mh = content_spec.get("message_hierarchy", {})
+        message_plan = {
+            "primary_benefit": {"statement": mh.get("primary_benefit", "")},
+            "secondary_benefits": [{"statement": b} for b in mh.get("secondary_benefits", [])],
+        }
+
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    rendered = render_content(resolved, output_dir, args.provider, args.dry_run)
+    mode = "dry-run fallback" if args.dry_run else "copy generator (LLM)"
+    print(f"[INFO] Content mode: {mode}")
+    rendered = render_content(resolved, output_dir, message_plan, args.dry_run)
+
     total_claims = sum(r.get("claims_count", 0) for r in rendered)
-    print(f"\n[OK] Content render complete: {len(rendered)} output(s), {total_claims} claim(s) with provenance")
+    gen_modes = set(r.get("generation_mode", "") for r in rendered)
+    print(f"\n[OK] Content render: {len(rendered)} output(s), {total_claims} claim(s)")
+    print(f"     Generation mode(s): {', '.join(gen_modes)}")
 
 
 if __name__ == "__main__":

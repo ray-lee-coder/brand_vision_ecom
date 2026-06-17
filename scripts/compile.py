@@ -79,21 +79,24 @@ def get_constraint_type(key_path):
 def detect_conflicts(resolved, sources):
     """
     Detect hard constraint conflicts across spec layers.
-    Returns list of conflict dicts.
+    Checks:
+    - forbidden colors in overrides
+    - unknown channel references
+    - product facts without source
+    - campaign claims without supporting facts
+    - channel hard rules vs campaign override conflicts
     """
     conflicts = []
+    brand = resolved.get("brand", {})
+    product = resolved.get("product", {})
+    campaign_data = sources.get("campaign", {})
+    campaign_override = campaign_data.get("override", {})
+    outputs = sources.get("campaign", {}).get("outputs", {})
+    channels = resolved.get("channels", {})
 
-    # Check forbidden colors
-    brand_forbidden = set(resolved.get("brand", {}).get("colors", {}).get("forbidden", []))
-    campaign_overrides = sources.get("campaign", {}).get("override", {})
-
-    # Check claims against product facts
-    brand_claims = resolved.get("brand", {}).get("claims", {}).get("require_evidence", [])
-    product_facts = resolved.get("product", {}).get("facts", {})
-
-    # Check if campaign asks for forbidden claims
-    # (campaign override might contain forbidden patterns)
-    for key, val in campaign_overrides.items():
+    # 1. Forbidden colors in overrides
+    brand_forbidden = set(brand.get("colors", {}).get("forbidden", []))
+    for key, val in campaign_override.items():
         if isinstance(val, str):
             for forbidden in brand_forbidden:
                 if forbidden.lower() in val.lower():
@@ -104,6 +107,66 @@ def detect_conflicts(resolved, sources):
                         "conflict_with": f"brand.colors.forbidden: {forbidden}",
                         "severity": "error",
                     })
+
+    # 2. Unknown channel references
+    for output_list in [outputs.get("visual", []), outputs.get("content", [])]:
+        for out in output_list:
+            ch = out.get("channel", "")
+            if ch and ch not in channels:
+                conflicts.append({
+                    "type": "unknown_channel",
+                    "field": f"outputs.{out.get('type', 'unknown')}.channel",
+                    "value": ch,
+                    "detail": f"Channel '{ch}' not found in channels/ directory",
+                    "severity": "error",
+                })
+
+    # 3. Product facts without source
+    facts = product.get("facts", {})
+    for fact_key, fact_data in facts.items():
+        source = fact_data.get("source", {})
+        if not source.get("ref"):
+            conflicts.append({
+                "type": "missing_source",
+                "field": f"product.facts.{fact_key}.source.ref",
+                "value": fact_key,
+                "detail": f"Fact '{fact_key}' has no source reference",
+                "severity": "warning",
+            })
+
+    # 4. require_evidence claims without matching facts
+    require_evidence = brand.get("claims", {}).get("require_evidence", [])
+    # Check if campaign content text (title, description) uses require_evidence terms
+    campaign_text = str(campaign_data.get("campaign", {}))
+    for evidence_term in require_evidence:
+        if evidence_term.lower() in campaign_text.lower():
+            # Check if any product fact supports this
+            has_evidence = any(
+                fact_data.get("source", {}).get("ref")
+                for fact_data in facts.values()
+            )
+            if not has_evidence:
+                conflicts.append({
+                    "type": "unsupported_claim",
+                    "field": f"campaign.{evidence_term}",
+                    "value": evidence_term,
+                    "detail": f"'{evidence_term}' requires evidence but product facts have no sources",
+                    "severity": "error",
+                })
+
+    # 5. unknown template
+    import os
+    for out in outputs.get("visual", []):
+        scene = out.get("type", "")
+        template_path = f"templates/{scene}.html"
+        if not os.path.exists(template_path):
+            conflicts.append({
+                "type": "unknown_template",
+                "field": f"outputs.visual.type",
+                "value": scene,
+                "detail": f"Template not found: {template_path}",
+                "severity": "error",
+            })
 
     return conflicts
 
@@ -182,9 +245,13 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
                 print(f"[CONFLICT] {c['field']}: '{c['value']}' conflicts with {c['conflict_with']}")
         return {"status": "failed", "conflicts": conflicts}
 
-    # ── Build message plan ──
+    # ── Build message plan (single source of truth for visual + content) ──
     primary_benefit_id = content_spec.get("content", {}).get("message_hierarchy", {}).get("primary_benefit", "")
     secondary_benefits = content_spec.get("content", {}).get("message_hierarchy", {}).get("secondary_benefits", [])
+    brand_name = brand_core.get("brand", {}).get("name", "Brand")
+    campaign_obj = campaign.get("campaign", {})
+    campaign_theme = f"{brand_name.lower()}_{campaign_name}"
+    primary_benefit_statement = primary_benefit_id if primary_benefit_id else "premium quality"
 
     # Map benefit IDs to product facts
     proof_points = []
@@ -198,16 +265,22 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
 
     message_plan = {
         "campaign_name": campaign_name,
-        "campaign_theme": "quiet_precision",
+        "campaign_theme": campaign_theme,
+        "brand_name": brand_name,
         "primary_benefit": {
-            "id": primary_benefit_id,
-            "statement": primary_benefit_id,
+            "id": primary_benefit_id or "primary_benefit",
+            "statement": primary_benefit_statement,
         },
         "secondary_benefits": [{"id": b, "statement": b} for b in secondary_benefits],
         "proof_points": proof_points,
         "call_to_action": {
             "tmall": "立即了解",
             "xiaohongshu": "查看通勤实测",
+        },
+        "visual": {
+            "headline": primary_benefit_statement,
+            "subtitle": f"{brand_name} — {primary_benefit_statement}",
+            "cta": "立即了解",
         },
     }
 

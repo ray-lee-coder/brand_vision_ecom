@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-BrandKit Visual Renderer — HTML Compositor + Playwright → PNG
+BrandKit Visual Renderer (v0.3.0)
 M2: 前景/背景分离 + 背景生成槽 + 局部重生成 + 版本追踪
-
-核心原则:
-- 产品前景 (product-slot img) 始终从 product facts assets 固定加载，绝不修改
-- 背景层 (background-layer) 可独立替换/生成
-- 每次修改背景 → 只重跑背景槽，前景像素不变
+FIXES:
+- Reads message-plan.json for headline/subtitle (不再 hardcode)
+- Missing product asset → BUILD FAILED (不再静默 placeholder)
+- Unknown template → BUILD FAILED (不再静默 fallback)
 """
 
 import json
@@ -16,7 +15,6 @@ import hashlib
 import time
 from pathlib import Path
 
-# Import background generator
 sys.path.insert(0, str(Path(__file__).parent))
 try:
     from background_generator import generate_background, inject_background
@@ -25,22 +23,32 @@ except ImportError:
     HAS_BG_GEN = False
 
 
-def resolve_product_image(product_facts, output_dir):
-    """Resolve product image from product facts assets."""
+def resolve_product_image(product_facts, source_required, allow_placeholder=False):
+    """Resolve product image from product facts assets.
+    source_required=True + asset missing → BUILD FAILED (unless --allow-placeholder)."""
     assets = product_facts.get("assets", {})
     product_image = assets.get("packshot", "")
 
     if not product_image:
+        if source_required and not allow_placeholder:
+            raise RuntimeError(
+                "Product asset missing: 'packshot' not defined in product facts. "
+                "Set source_required: false in visual-spec or use --allow-placeholder."
+            )
         return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23ddd'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23999' font-size='14'%3EProduct%3C/text%3E%3C/svg%3E", None
 
     abs_img = str(Path(product_image).resolve()) if not os.path.isabs(product_image) else product_image
-    if os.path.exists(abs_img):
-        # Hash the product image for version tracking
-        with open(abs_img, "rb") as f:
-            img_hash = hashlib.md5(f.read()).hexdigest()[:8]
-        return f"file://{abs_img}", img_hash
-    else:
+    if not os.path.exists(abs_img):
+        if source_required and not allow_placeholder:
+            raise RuntimeError(
+                f"Product asset not found: {abs_img}. "
+                "Use --allow-placeholder to generate with placeholder."
+            )
         return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23ddd'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23999' font-size='14'%3EProduct%3C/text%3E%3C/svg%3E", None
+
+    with open(abs_img, "rb") as f:
+        img_hash = hashlib.md5(f.read()).hexdigest()[:8]
+    return f"file://{abs_img}", img_hash
 
 
 def get_scene_policy(visual_spec, scene_name):
@@ -54,13 +62,13 @@ def get_scene_policy(visual_spec, scene_name):
     }
 
 
-def render_html(resolved, output_dir, bg_generator=None):
-    """Compose HTML with separated foreground/background layers."""
+def render_html(resolved, output_dir, message_plan, allow_placeholder=False):
+    """Compose HTML with foreground/background separation.
+    Reads headline/subtitle from message-plan.json (not hardcoded)."""
     campaign = resolved.get("campaign", {})
     brand = resolved.get("brand", {})
     visual_spec = resolved.get("visual_spec", {})
     product_facts = resolved.get("product", {})
-    channels = resolved.get("channels", {})
     output_targets = resolved.get("output_targets", [])
 
     brand_name = brand.get("name", "Brand")
@@ -75,12 +83,15 @@ def render_html(resolved, output_dir, bg_generator=None):
     accent = colors.get("accent", "#888888")
     background = colors.get("background", "#FFFFFF")
 
-    # Resolve product image (FIXED — never generated)
-    product_image_src, product_img_hash = resolve_product_image(product_facts, output_dir)
+    # Resolve product image — FAILS if source_required and asset missing
+    source_required = visual_spec.get("product_image", {}).get("source_required", True)
+    product_image_src, product_img_hash = resolve_product_image(product_facts, source_required, allow_placeholder)
 
-    # Headline from campaign context
-    headline = "Silence, tuned with precision."
-    subtitle = "Precision audio"
+    # Read from message-plan (single source of truth)
+    visual_msg = message_plan.get("visual", {})
+    headline = visual_msg.get("headline", message_plan.get("primary_benefit", {}).get("statement", "Brand"))
+    subtitle = visual_msg.get("subtitle", f"{brand_name} — {headline}")
+    primary_benefit = message_plan.get("primary_benefit", {}).get("statement", headline)
 
     visual_targets = [t for t in output_targets if t["type"] == "visual"]
     rendered = []
@@ -92,62 +103,59 @@ def render_html(resolved, output_dir, bg_generator=None):
         constraints = target.get("constraints", {})
         safe_margin = constraints.get("safe_margin_px", 48)
 
-        # Dimensions
         dims = {"1:1": (800, 800), "3:4": (600, 800), "16:9": (800, 450)}
         width, height = dims.get(ratio, (800, 800))
 
-        # Scene policy
         policy = get_scene_policy(visual_spec, scene)
 
-        # Load template
+        # Load template — FAIL if missing
         template_path = Path("templates") / f"{scene}.html"
         if not template_path.exists():
-            template_path = Path("templates") / "hero.html"
+            raise RuntimeError(f"Template not found: templates/{scene}.html")
+
         with open(template_path) as f:
             html = f.read()
 
-        # ── Generate background (independent of product) ──
+        # Generate background (independent of product)
         bg_info = None
         if policy["regenerate_background"] and HAS_BG_GEN:
             bg_info = generate_background(scene, colors, product_facts.get("name", brand_name))
-        elif policy["regenerate_background"] and bg_generator:
-            bg_info = bg_generator(scene, colors, product_facts.get("name", brand_name))
-
         if bg_info:
             html = inject_background(html, bg_info)
         else:
-            # Static brand background
             html = html.replace("{background_style}", "background: var(--brand-background);")
             html = html.replace("{background_content}", "")
 
-        # ── Fill brand tokens (foreground) ──
+        # Fill brand tokens (foreground)
         fills = {
             "{primary}": primary, "{secondary}": secondary,
             "{accent}": accent, "{background}": background,
             "{heading_font}": heading_font, "{body_font}": body_font,
             "{safe_margin}": str(safe_margin),
             "{product_coverage}": "50%", "{logo_position}": "top-left",
-            "{brand_name}": brand_name, "{headline}": headline,
-            "{subtitle}": subtitle, "{width}": str(width), "{height}": str(height),
+            "{brand_name}": brand_name,
+            "{headline}": headline, "{subtitle}": subtitle,
+            "{width}": str(width), "{height}": str(height),
             "{product_image}": product_image_src,
         }
         for key, val in fills.items():
             html = html.replace(key, val)
 
-        # Write HTML
+        # Write HTML to campaign-specific output dir
+        campaign_name = campaign.get("name", "default")
+        out_dir = output_dir / campaign_name / "visual"
+        out_dir.mkdir(parents=True, exist_ok=True)
         html_filename = f"{channel}-{scene}.html"
-        html_path = output_dir / html_filename
+        html_path = out_dir / html_filename
         with open(html_path, "w") as f:
             f.write(html)
         print(f"[OK] HTML → {html_path}")
 
-        # ── Build version provenance ──
-        bg_hash = bg_info.get("hash", "none") if bg_info else "static"
+        bg_hash = bg_info.get("hash", "static") if bg_info else "static"
         provenance = {
             "file": html_filename,
-            "channel": channel,
-            "scene": scene,
-            "ratio": ratio,
+            "channel": channel, "scene": scene, "ratio": ratio,
+            "headline_source": "message-plan",
             "product_asset": {
                 "source": product_image_src,
                 "hash": product_img_hash,
@@ -171,31 +179,29 @@ def render_html(resolved, output_dir, bg_generator=None):
 
 
 def render_png(html_path, output_path, width, height):
-    """Playwright screenshot → PNG."""
+    """Playwright screenshot → PNG. FAILS on error (no silent skip)."""
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        return False
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page(viewport={"width": width, "height": height})
-            page.goto(f"file://{html_path.resolve()}", wait_until="networkidle")
-            page.screenshot(path=str(output_path), full_page=False)
-            browser.close()
-        return True
-    except Exception as e:
-        print(f"[ERROR] Playwright: {e}")
-        return False
+        raise RuntimeError("playwright not installed. Run: pip install playwright && python3 -m playwright install chromium")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": width, "height": height})
+        page.goto(f"file://{html_path.resolve()}", wait_until="networkidle")
+        page.screenshot(path=str(output_path), full_page=False)
+        browser.close()
+    return True
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="BrandKit Visual Renderer (M2)")
+    parser = argparse.ArgumentParser(description="BrandKit Visual Renderer (v0.3.0)")
     parser.add_argument("--resolved", default=".build/resolved-task.json")
+    parser.add_argument("--message-plan", default=".build/message-plan.json")
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--skip-png", action="store_true")
-    parser.add_argument("--bg-variant", default="", help="Background variant for replacement testing")
+    parser.add_argument("--allow-placeholder", action="store_true")
     args = parser.parse_args()
 
     resolved_path = Path(args.resolved)
@@ -206,20 +212,33 @@ def main():
     with open(resolved_path) as f:
         resolved = json.load(f)
 
+    # Load message-plan (single source of truth)
+    msg_path = Path(args.message_plan)
+    message_plan = {}
+    if msg_path.exists():
+        with open(msg_path) as f:
+            message_plan = json.load(f)
+
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Render HTML with foreground/background separation
-    rendered = render_html(resolved, output_dir)
+    try:
+        rendered = render_html(resolved, output_dir, message_plan, args.allow_placeholder)
+    except RuntimeError as e:
+        print(f"[FAIL] {e}")
+        sys.exit(1)
 
-    # Render PNG
     if not args.skip_png:
         for r in rendered:
             html_path = Path(r["html_file"])
             png_name = html_path.stem + ".png"
-            png_path = output_dir / png_name
-            ok = render_png(html_path, png_path, r["width"], r["height"])
-            r["png_rendered"] = ok
+            png_path = html_path.parent / png_name
+            try:
+                ok = render_png(html_path, png_path, r["width"], r["height"])
+                r["png_rendered"] = ok
+            except RuntimeError as e:
+                print(f"[FAIL] PNG render: {e}")
+                sys.exit(1)
 
     # Write visual provenance
     provenance_path = output_dir / ".visual-provenance.json"
@@ -227,13 +246,11 @@ def main():
         json.dump({
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "principle": "product_foreground_fixed_background_independent",
+            "headline_source": "message-plan.json",
             "outputs": [r["provenance"] for r in rendered],
         }, f, indent=2, ensure_ascii=False)
     print(f"[OK] Visual provenance → {provenance_path}")
-
-    print(f"\n[OK] Visual render complete: {len(rendered)} output(s)")
-    print(f"     Product foreground: FIXED (never modified)")
-    print(f"     Background: independent generation slot")
+    print(f"[OK] Visual render: {len(rendered)} output(s) — headline from message-plan")
 
 
 if __name__ == "__main__":
