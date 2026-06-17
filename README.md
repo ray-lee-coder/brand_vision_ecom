@@ -6,6 +6,18 @@
 
 ---
 
+> ⚠️ **Prompt 模板基于 GPT-Image-2 设计**
+> 
+> 本工具的 Style Lock 结构、场景模板的 prompt 写法、颜色/留白/否定清单等规则，均针对 GPT-Image-2（以及 OpenAI 兼容接口的同类模型）的行为特征优化。
+> 
+> 换成其他模型（如 SenseNova U1-Fast、Stable Diffusion、Midjourney 等）时，**输出质量和规则遵守程度不确定**。可能出现的差异包括：
+> - Style Lock 中的描述性文字被渲染成图片内的可见文字（而非作为元指令忽略）
+> - 颜色 hex 值的跟随准确率下降
+> - 产品占比、留白比例等数值约束不被严格执行
+> - 否定清单中的禁止项仍可能出现
+> 
+> 如果你使用非 GPT-Image-2 的后端，建议先用本工具生成 Prompt，再手动调整适配该模型的特有参数。
+
 ## 快速开始
 
 ```bash
@@ -151,14 +163,14 @@ python3 scripts/generate_image.py examples/aether/brand.yaml \
 
 ---
 
-## 支持的 API
+## 模型兼容性
 
-任何 OpenAI 兼容的生图接口。在 `.env` 里配：
+Style Lock 的写法（hex 色值锁定、产品占比数字化、留白显式声明、否定清单）是针对 **GPT-Image-2** 的行为特征反复调试出来的。换成其他模型时，这些约束不一定被同等程度地遵循。
 
-```ini
-IMG_BASE_URL=https://token.sensenova.cn/v1
-IMG_MODEL=sensenova-u1-fast
-IMG_API_KEY=sk-......
-```
+| 模型 | Style Lock 效果 | 实测 |
+|------|----------------|------|
+| GPT-Image-2 (apimart.ai) | ✅ 最佳 — hex 色值、占比、留白、否定清单均有效 | ✅ 已验证 |
+| SenseNova U1-Fast | ⚠️ 中等 — 色值基本跟随，但可能把描述文字渲染进图片 | ✅ 已验证 |
+| 其他 OpenAI 兼容模型 | ❓ 不确定 — 建议先小批量测试再大规模使用 | ❌ 未实测 |
 
-测试过的后端：SenseNova U1-Fast、GPT-Image-2（apimart.ai）。理论上任何 `v1/images/generations` 接口都兼容。
+**建议：** 先用 `--output /tmp/test.png` 跑一张看看效果，满意再批量出图。
