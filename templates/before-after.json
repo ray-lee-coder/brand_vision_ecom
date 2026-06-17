@@ -1,0 +1,23 @@
+{
+  "id": "before-after",
+  "name": "前后对比图",
+  "description": "Before / After 效果对比，常见于美容、清洁、家居改造",
+  "defaults": {
+    "background": "matching backgrounds for both halves",
+    "lighting": "identical lighting across both halves",
+    "composition": "split screen, left = before, right = after, center divider"
+  },
+  "prompt_template": {
+    "type": "before and after comparison photography",
+    "subject": "split screen before and after: left = before, right = after, {product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "side by side comparison, 8K commercial photography"
+  },
+  "variants": {
+    "skincare": { "description": "美容/护肤", "overrides": { "composition": "close-up skin texture, left = untreated, right = treated, center line" } },
+    "cleaner": { "description": "清洁/除垢", "overrides": { "background": "same surface in both halves", "composition": "left = dirty/stained, right = clean, dramatic improvement" } },
+    "lighting": { "description": "灯光效果", "overrides": { "composition": "tabletop scene, left = dim/before, right = bright/after, center line" } }
+  }
+}

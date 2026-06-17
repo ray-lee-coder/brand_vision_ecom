@@ -1,0 +1,23 @@
+{
+  "id": "flat-lay",
+  "name": "平铺图 / Flat Lay",
+  "description": "俯拍平铺图，适用于服饰、配饰、多品组合",
+  "defaults": {
+    "background": "clean flat surface, solid light color",
+    "lighting": "overhead diffused studio lighting, shadowless",
+    "composition": "top-down 90°, flat arrangement, even spacing"
+  },
+  "prompt_template": {
+    "type": "flat lay photography",
+    "subject": "overhead flat lay view, {product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "8K commercial flat lay photography"
+  },
+  "variants": {
+    "minimal": { "description": "极简", "overrides": { "background": "pure white marble surface", "composition": "single product centered, generous negative space" } },
+    "styled": { "description": "搭配场景", "overrides": { "background": "natural linen fabric surface", "composition": "product with complementary accessories, balanced asymmetry" } },
+    "bundle": { "description": "套装展示", "overrides": { "composition": "multiple items arranged in a grid pattern, matching color theme" } }
+  }
+}

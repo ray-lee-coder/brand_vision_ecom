@@ -1,0 +1,23 @@
+{
+  "id": "infographic",
+  "name": "信息图 / 详情页",
+  "description": "带图标、标签、文字说明的信息图，适合详情页 A+ 模块",
+  "defaults": {
+    "background": "clean solid background, brand color or white",
+    "lighting": "even flat lighting, no shadows",
+    "composition": "structured layout: headline + icon grid + product image, clear hierarchy"
+  },
+  "prompt_template": {
+    "type": "infographic design",
+    "subject": "infographic layout explaining {product_description}, features and benefits",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "professional infographic, clean modern design"
+  },
+  "variants": {
+    "featuregrid": { "description": "卖点矩阵", "overrides": { "composition": "product center, 4 feature icons around it, minimal text labels, grid layout" } },
+    "comparison": { "description": "对比表", "overrides": { "composition": "comparison table layout: old vs new, checkmarks and cross marks, clear columns" } },
+    "specs": { "description": "规格参数", "overrides": { "composition": "technical specifications layout, labeled diagram, measurements, structured grid" } }
+  }
+}

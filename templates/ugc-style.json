@@ -1,0 +1,23 @@
+{
+  "id": "ugc-style",
+  "name": "UGC / 买家秀",
+  "description": "模仿真实用户拍摄的买家秀、开箱图，有真实感",
+  "defaults": {
+    "background": "real casual home environment, slightly lived-in",
+    "lighting": "natural indoor light, slightly imperfect, warm",
+    "composition": "hand-held phone camera perspective, candid"
+  },
+  "prompt_template": {
+    "type": "user generated content photography",
+    "subject": "real person using {product_description} at home, UGC style",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "shot on iPhone, natural and candid, not retouched"
+  },
+  "variants": {
+    "unboxing": { "description": "开箱", "overrides": { "background": "wooden table, casual home background", "composition": "hands unboxing product, mid-action, smartphone perspective" } },
+    "usingselfie": { "description": "使用自拍", "overrides": { "background": "bedroom or living room, personal space", "composition": "selfie angle holding product, mirror selfie style" } },
+    "review": { "description": "评测", "overrides": { "background": "desk setup, product next to phone/laptop", "composition": "top-down desk shot, multiple items visible, honest feel" } }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "social-media",
+  "name": "社交媒体图",
+  "description": "小红书、Instagram、抖音等社媒平台风格图片",
+  "defaults": {
+    "background": "lifestyle setting, aesthetically pleasing",
+    "lighting": "natural daylight, slightly warm",
+    "composition": "lifestyle flat lay or scene, social media aspect, engaging"
+  },
+  "prompt_template": {
+    "type": "social media content photography",
+    "subject": "social media style shot, {product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "social media content, high quality lifestyle"
+  },
+  "variants": {
+    "xiaohongshu": { "description": "小红书风格", "overrides": { "background": "warm cream desk with coffee cup and magazine", "lighting": "bright warm natural light from window", "composition": "aesthetic flat lay, top-down 90°, balanced composition" } },
+    "instagram": { "description": "Instagram 风格", "overrides": { "background": "minimal modern interior, neutral tones", "lighting": "soft window light with subtle warm tint", "composition": "lifestyle scene, model holding product, candid feel" } },
+    "tiktok": { "description": "抖音风格", "overrides": { "background": "trendy, vibrant setting", "lighting": "bright vibrant lighting, colorful", "composition": "dynamic angle, slightly from below, energetic composition" } }
+  }
+}

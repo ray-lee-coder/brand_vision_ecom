@@ -1,0 +1,24 @@
+{
+  "id": "model-showcase",
+  "name": "模特展示 / Model Shot",
+  "description": "真人模特展示产品，服装、配饰、穿戴类",
+  "defaults": {
+    "background": "clean studio backdrop, solid light gray",
+    "lighting": "soft studio key light + fill, 3:1 ratio",
+    "composition": "full body, model centered, natural stance"
+  },
+  "prompt_template": {
+    "type": "fashion model photography",
+    "subject": "model wearing {product_description}, full body shot",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial fashion photography, 8K"
+  },
+  "variants": {
+    "fullbody": { "description": "全身", "overrides": { "composition": "full body, model standing, feet fully visible, centered" } },
+    "halfbody": { "description": "半身", "overrides": { "composition": "waist-up crop, model facing camera, natural expression" } },
+    "detail": { "description": "细节", "overrides": { "composition": "close crop on product area, fabric/texture visible" } },
+    "editorial": { "description": "编辑风格", "overrides": { "background": "dark premium backdrop", "lighting": "dramatic side lighting, editorial contrast", "composition": "three-quarter body, model in motion or candid pose" } }
+  }
+}

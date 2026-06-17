@@ -102,15 +102,25 @@ brand:
 
 ---
 
-## 场景模板
+## 场景模板（15 个）
 
 | 模板 ID | 适用的图 | 风格变体 |
 |---------|---------|---------|
 | `hero-image` | 白底主图、商品搜图、首页首图 | luxury / minimal / tech |
-| `lifestyle-scene` | 场景氛围图、买家秀 | indoor / outdoor / studio |
-| `detail-macro` | 细节图、材质特写 | material / stitching / hardware |
-| `multi-angle-grid` | 多角度展示、颜色对比 | 2x2 / 1x4 / colors |
-| `poster-banner` | 促销海报、新品发布、广告图 | sale / editorial / launch |
+| `lifestyle-scene` | 场景氛围图、使用场景 | indoor / outdoor / studio |
+| `flat-lay` | 平铺图、俯拍、配饰摆拍 | minimal / styled / bundle |
+| `detail-macro` | 细节图、材质特写、工艺展示 | material / stitching / hardware |
+| `model-showcase` | 模特展示、服装穿搭 | fullbody / halfbody / detail / editorial |
+| `social-media` | 小红书/Instagram/抖音图 | xiaohongshu / instagram / tiktok |
+| `ugc-style` | 买家秀、开箱、真实用户图 | unboxing / using_selfie / review |
+| `before-after` | 前后对比、效果展示 | skincare / cleaner / lighting |
+| `packaging` | 包装展示、礼盒、开盒 | closed / opened / gift |
+| `infographic` | 信息图、详情页 A+ 模块 | feature_grid / comparison / specs |
+| `multi-product` | 套装、组合、系列陈列 | row / cluster / tiered |
+| `multi-angle-grid` | 多角度、颜色对比 | 2x2 / 1x4 / colors |
+| `magazine-editorial` | 杂志风、品牌形象大片 | high_fashion / still_life / cover |
+| `seasonal-campaign` | 季节/节日/Campaign | spring / summer / autumn / winter |
+| `poster-banner` | 促销海报、新品发布 | sale / editorial / launch |
 
 ```bash
 # 换成不同模板就行

@@ -1,0 +1,23 @@
+{
+  "id": "magazine-editorial",
+  "name": "杂志编辑风",
+  "description": "高端杂志编辑风格，适用于品牌形象、campaign 大片",
+  "defaults": {
+    "background": "dark premium backdrop or dramatic scene",
+    "lighting": "cinematic dramatic lighting, high contrast",
+    "composition": "heroic composition, negative space for typography, editorial crop"
+  },
+  "prompt_template": {
+    "type": "editorial magazine photography",
+    "subject": "editorial fashion shoot featuring {product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "high fashion editorial photography, magazine cover quality"
+  },
+  "variants": {
+    "highfashion": { "description": "高定时尚", "overrides": { "background": "dramatic dark space with single light source", "lighting": "single hard key light, deep shadows, high contrast", "composition": "model with product, strong silhouette, magazine crop" } },
+    "stillife": { "description": "静物艺术", "overrides": { "background": "dark moody background, textured surface", "lighting": "single directional light, chiaroscuro effect", "composition": "product as art object, dramatic shadow play, cinematic" } },
+    "cover": { "description": "封面风格", "overrides": { "background": "brand color backdrop, clean", "lighting": "bright even editorial lighting", "composition": "product centered, top third empty for masthead/headline, cover format" } }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "multi-product",
+  "name": "多品组合 / Bundle",
+  "description": "多个产品一起展示，适用于套装、组合、系列",
+  "defaults": {
+    "background": "clean white or soft gradient backdrop",
+    "lighting": "even studio lighting covering all products",
+    "composition": "multiple products arranged together, balanced composition"
+  },
+  "prompt_template": {
+    "type": "multi-product group photography",
+    "subject": "group arrangement of multiple products: {product_description}",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial multi-product photography, 8K"
+  },
+  "variants": {
+    "row": { "description": "一字排开", "overrides": { "composition": "products in a horizontal row, evenly spaced, same scale, front view" } },
+    "cluster": { "description": "簇状排列", "overrides": { "composition": "products clustered naturally, hero product in front, others slightly behind, overlapping" } },
+    "tiered": { "description": "阶梯排列", "overrides": { "composition": "products arranged diagonally from front to back, staggered heights, dynamic depth" } }
+  }
+}

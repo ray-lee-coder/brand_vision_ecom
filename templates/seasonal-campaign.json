@@ -1,0 +1,24 @@
+{
+  "id": "seasonal-campaign",
+  "name": "季节 Campaign",
+  "description": "春夏秋冬、节日、促销季等季节性主题图片",
+  "defaults": {
+    "background": "seasonally themed environment",
+    "lighting": "mood lighting matching the season",
+    "composition": "full scene with seasonal elements, product as hero"
+  },
+  "prompt_template": {
+    "type": "seasonal campaign photography",
+    "subject": "seasonal campaign image, {product_description} in {season} setting",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial campaign photography, 8K"
+  },
+  "variants": {
+    "spring": { "description": "春季/清新", "overrides": { "background": "cherry blossoms, fresh green, spring meadow", "lighting": "soft morning light, pastel tones", "composition": "product among spring flowers, fresh and vibrant" } },
+    "summer": { "description": "夏季/活力", "overrides": { "background": "beach, poolside, or sunny outdoor", "lighting": "bright sunlight, golden hour glow", "composition": "vacation lifestyle scene, product in summer context" } },
+    "autumn": { "description": "秋季/温暖", "overrides": { "background": "autumn leaves, warm interior with blankets", "lighting": "warm golden light, cozy atmosphere", "composition": "cozy seasonal setting, warm tones, comfort feel" } },
+    "winter": { "description": "冬季/节日", "overrides": { "background": "snowy scene, Christmas decor, festive setting", "lighting": "cool winter light with warm accent lighting", "composition": "festive holiday arrangement, gift-giving context" } }
+  }
+}

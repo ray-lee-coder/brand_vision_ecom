@@ -1,0 +1,23 @@
+{
+  "id": "packaging",
+  "name": "包装展示 / Package Shot",
+  "description": "产品包装、礼盒、开箱后的包装展示",
+  "defaults": {
+    "background": "clean white or light gray backdrop",
+    "lighting": "soft studio lighting, even on all packaging faces",
+    "composition": "centered, slight angle to show depth and side"
+  },
+  "prompt_template": {
+    "type": "packaging product photography",
+    "subject": "{product_description} packaging, box or container",
+    "background": "{background}",
+    "lighting": "{lighting}",
+    "composition": "{composition}",
+    "quality": "commercial packaging photography, 8K"
+  },
+  "variants": {
+    "closed": { "description": "全闭状态", "overrides": { "composition": "box closed, clean front panel visible, centered on white" } },
+    "opened": { "description": "开盒状态", "overrides": { "composition": "box open, product peeking out, arranged naturally" } },
+    "gift": { "description": "礼盒/礼品", "overrides": { "background": "warm festive backdrop, subtle sparkle or ribbon", "lighting": "warm premium lighting with subtle glow", "composition": "gift box with ribbon, elegant arrangement" } }
+  }
+}
