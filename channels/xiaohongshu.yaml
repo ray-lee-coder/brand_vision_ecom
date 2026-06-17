@@ -1,0 +1,27 @@
+channel:
+  id: xiaohongshu
+
+visual:
+  ratios:
+    - "3:4"
+  product_coverage: "40%-60%"
+  safe_margin_px: 40
+  text_density: medium
+
+content:
+  note_title:
+    max_chars: 20
+  note_body:
+    max_chars: 1000
+  forbidden_patterns:
+    - hard_selling
+    - fake_review_tone
+  style: experience_story
+  allowed:
+    - first_person
+    - usage_scene
+    - soft_recommendation
+  avoid:
+    - hard selling
+    - fake review tone
+    - long feature lists

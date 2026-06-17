@@ -1,0 +1,70 @@
+brand:
+  name: Aether
+  category: audio-tech
+  positioning: premium personal audio for urban professionals
+
+identity:
+  keywords:
+    - precise
+    - calm
+    - premium
+    - technical
+  avoid:
+    - cheap promotional tone
+    - childish colors
+    - noisy layouts
+    - exaggerated claims
+
+colors:
+  primary: "#111827"
+  secondary: "#E5E7EB"
+  accent: "#8B7355"
+  background: "#F7F4EF"
+  forbidden:
+    - "#FF00FF"
+    - "#00FF00"
+
+typography:
+  latin:
+    heading: "Neue Haas Grotesk"
+    body: "Inter"
+  chinese:
+    heading: "Noto Sans SC"
+    body: "Noto Sans SC"
+
+logo:
+  file: assets/logo.svg
+  min_size_px: 48
+  clear_space_px: 24
+  allowed_backgrounds:
+    - light
+    - dark
+  forbidden:
+    - stretch
+    - rotate
+    - gradient_fill
+    - low_contrast
+
+voice:
+  tone:
+    - restrained
+    - precise
+    - confident
+  avoid:
+    - shouting
+    - fake luxury
+    - internet slang
+    - unsupported superlatives
+
+claims:
+  require_evidence:
+    - "best"
+    - "first"
+    - "medical grade"
+    - "100%"
+
+references:
+  approved_visuals:
+    - assets/reference/kv-01.png
+  approved_copy:
+    - "Silence, tuned with precision."

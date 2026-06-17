@@ -1,0 +1,5 @@
+{
+  "_comment": "电商平台规格注册表。新增平台时在 ecom_platforms/ 下创建 <id>.json 并注册。",
+  "default_platform": "taobao",
+  "platforms": ["taobao", "douyin", "meituan"]
+}

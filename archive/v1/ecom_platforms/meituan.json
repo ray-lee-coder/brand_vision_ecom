@@ -1,0 +1,43 @@
+{
+  "id": "meituan",
+  "name": "美团",
+  "description": "美团外卖/闪购商品套图。主图+内容图+细节图。突出商品主体。",
+  "default_size": "800x800",
+  "format": "jpg",
+  "max_size_kb": 2048,
+  "image_set": [
+    {
+      "seq": 1,
+      "type": "main",
+      "label": "商品主图",
+      "description": "商品/菜品主体展示，白底或简约背景。突出卖相。",
+      "template": "hero-image",
+      "variant": "",
+      "size": "800x800",
+      "required": true,
+      "notes": "主体居中，不得有过多的装饰元素遮挡"
+    },
+    {
+      "seq": 2,
+      "type": "secondary",
+      "label": "内容展示图",
+      "description": "商品/菜品内容或分量展示，增加购买欲。",
+      "template": "lifestyle-scene",
+      "variant": "studio",
+      "size": "800x800",
+      "required": false,
+      "notes": "突出内容，可含配料/食材展示"
+    },
+    {
+      "seq": 3,
+      "type": "secondary",
+      "label": "规格细节图",
+      "description": "规格/分量/包装展示，帮助用户决策。",
+      "template": "detail-macro",
+      "variant": "",
+      "size": "800x800",
+      "required": false,
+      "notes": "展示产品规格、分量信息"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+campaign:
+  name: 618-launch
+  brand_ref: brands/aether/brand-core.yaml
+  product_ref: brands/aether/products/x1.yaml
+  objective: product_launch
+  audience: urban_commuters
+
+outputs:
+  visual:
+    - type: hero
+      channel: tmall
+      format: png
+    - type: cover
+      channel: xiaohongshu
+      format: png
+  content:
+    - type: product_title
+      channel: tmall
+    - type: bullet_points
+      channel: tmall
+    - type: note
+      channel: xiaohongshu
+    - type: title
+      channel: xiaohongshu
+
+override:
+  headline_max_chars: 14

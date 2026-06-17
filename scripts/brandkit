@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# BrandKit CLI — 统一入口 (M1)
+set -euo pipefail
+
+BRANDKIT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$BRANDKIT_DIR"
+
+CMD="${1:-help}"
+shift || true
+
+case "$CMD" in
+  init)
+    BRAND="${1:-}"
+    if [ -z "$BRAND" ]; then
+      echo "Usage: brandkit init <brand-name>"
+      exit 1
+    fi
+    mkdir -p "brands/$BRAND/products" "brands/$BRAND/assets"
+    echo "[OK] Initialized brand: $BRAND"
+    ;;
+
+  build)
+    CAMPAIGN="${1:-campaigns/618-launch.yaml}"
+    echo "[BUILD] Compiling specs from: $CAMPAIGN"
+    python3 scripts/compile.py "$CAMPAIGN"
+
+    echo "[BUILD] Rendering visual..."
+    python3 scripts/render_visual.py
+
+    echo "[BUILD] Rendering content..."
+    python3 scripts/render_content.py --dry-run
+
+    echo "[BUILD] Verifying..."
+    python3 scripts/verify.py
+
+    echo "[BUILD] Validating channels..."
+    python3 scripts/validate_channel.py 2>&1 || echo "[WARN] Channel validation had failures (non-blocking)"
+
+    echo ""
+    echo "[DONE] Build complete. Output in output/"
+    ;;
+
+  build-all)
+    echo "[BUILD-ALL] Building all campaigns..."
+    for f in campaigns/*.yaml; do
+      echo ""
+      echo "=== $(basename "$f") ==="
+      CAMPAIGN_NAME="$(basename "$f" .yaml)"
+      bash "$0" build "$f" 2>&1 || echo "[WARN] Build failed for $f"
+    done
+    echo ""
+    echo "[DONE] All campaigns built."
+    ;;
+
+  render)
+    SUB="${1:-visual}"
+    shift 2>/dev/null || true
+    case "$SUB" in
+      visual) python3 scripts/render_visual.py "$@" ;;
+      content) python3 scripts/render_content.py "$@" ;;
+      ab) python3 scripts/ab_generator.py "$@" ;;
+      *) echo "Usage: brandkit render <visual|content|ab> [options]" ;;
+    esac
+    ;;
+
+  verify)
+    python3 scripts/verify.py "$@"
+    ;;
+
+  validate)
+    python3 scripts/validate_channel.py "$@"
+    ;;
+
+  baseline)
+    CAMPAIGN="${1:-campaigns/618-launch.yaml}"
+    echo "[BASELINE] Running pure-prompt baseline for: $CAMPAIGN"
+    python3 scripts/run_baseline.py "$CAMPAIGN" --dry-run "$@"
+    ;;
+
+  ab)
+    echo "[AB] Generating A/B drafts..."
+    python3 scripts/ab_generator.py --resolved .build/resolved-task.json --message-plan .build/message-plan.json --dry-run "$@"
+    ;;
+
+  clean)
+    rm -rf .build output
+    echo "[OK] Cleaned .build/ and output/"
+    ;;
+
+  help|*)
+    echo "BrandKit — 品牌约束视觉与内容编译器 (M1)"
+    echo ""
+    echo "Usage:"
+    echo "  brandkit init <brand>         Initialize a new brand directory"
+    echo "  brandkit build [campaign]     Build single campaign kit"
+    echo "  brandkit build-all            Build all campaigns"
+    echo "  brandkit render visual        Render visual outputs"
+    echo "  brandkit render content       Render content outputs"
+    echo "  brandkit render ab            Generate A/B drafts"
+    echo "  brandkit verify               Verify outputs against brand rules"
+    echo "  brandkit validate             Validate channel differentiation"
+    echo "  brandkit baseline [campaign]  Run pure-prompt baseline comparison"
+    echo "  brandkit ab                   Generate A/B drafts (quick)"
+    echo "  brandkit clean                Clean build artifacts"
+    echo ""
+    echo "Examples:"
+    echo "  brandkit build campaigns/618-launch.yaml"
+    echo "  brandkit build-all"
+    echo "  brandkit baseline campaigns/618-launch.yaml"
+    ;;
+esac

@@ -1,0 +1,26 @@
+content:
+  default_language: zh-CN
+  tone_source: brand-core.voice
+
+  message_hierarchy:
+    primary_benefit: "沉浸降噪"
+    secondary_benefits:
+      - "轻量佩戴"
+      - "长续航"
+      - "低延迟连接"
+
+  copy_rules:
+    headline:
+      style: concise
+      avoid_question: true
+
+  claim_rules:
+    require_source_for:
+      - battery_hours
+      - decibel_reduction
+      - waterproof_rating
+    forbidden:
+      - "全网第一"
+      - "永久有效"
+      - "医学级"
+      - "100%无损"

@@ -1,0 +1,5 @@
+{
+  "_comment": "Registered platform profiles for brand_vision_ecom. Add new platforms by creating a <platform-id>.json file in this directory.",
+  "default_platform": "gpt-image-2",
+  "platforms": ["gpt-image-2", "sensenova-u1-fast", "openai-dalle3"]
+}

@@ -1,0 +1,24 @@
+campaign:
+  name: 618-pro-launch
+  brand_ref: brands/aether/brand-core.yaml
+  product_ref: brands/aether/products/x1-pro.yaml
+  objective: product_launch
+  audience: audiophile_commuters
+
+outputs:
+  visual:
+    - type: hero
+      channel: tmall
+      format: png
+    - type: cover
+      channel: xiaohongshu
+      format: png
+  content:
+    - type: product_title
+      channel: tmall
+    - type: bullet_points
+      channel: tmall
+    - type: note
+      channel: xiaohongshu
+    - type: title
+      channel: xiaohongshu

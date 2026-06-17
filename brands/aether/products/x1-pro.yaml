@@ -1,0 +1,36 @@
+product:
+  id: x1-pro-headphones
+  name: Aether X1 Pro
+  category: wireless-headphones
+  facts:
+    noise_reduction:
+      value: 48
+      unit: dB
+      source:
+        type: lab_report
+        ref: docs/x1-pro-noise-test.pdf
+      status: verified
+    battery:
+      value: 52
+      unit: hours
+      conditions: "ANC off, 50% volume"
+      source:
+        type: product_spec
+        ref: docs/x1-pro-spec.pdf
+      status: verified
+    waterproof:
+      value: IPX5
+      unit: ""
+      source:
+        type: certification
+        ref: docs/x1-pro-cert.pdf
+      status: verified
+    lightweight:
+      value: 268
+      unit: g
+      source:
+        type: product_spec
+        ref: docs/x1-pro-spec.pdf
+      status: verified
+  assets:
+    packshot: brands/aether/assets/products/x1-pro/packshot.png

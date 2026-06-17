@@ -1,0 +1,76 @@
+{
+  "id": "douyin",
+  "name": "抖音电商",
+  "description": "抖音小店商品主图套图。5张主图+可选竖图。首图必须实物图。",
+  "default_size": "800x800",
+  "format": "jpg",
+  "max_size_kb": 5120,
+  "image_set": [
+    {
+      "seq": 1,
+      "type": "main",
+      "label": "首图主图",
+      "description": "实物展示图，产品清晰居中。不得全屏水印。",
+      "template": "hero-image",
+      "variant": "",
+      "size": "800x800",
+      "required": true,
+      "notes": "必须实物图，禁止全屏水印。商品主体居中"
+    },
+    {
+      "seq": 2,
+      "type": "main",
+      "label": "卖点功能展示",
+      "description": "核心功能或卖点展示，可含使用场景。",
+      "template": "lifestyle-scene",
+      "variant": "studio",
+      "size": "800x800",
+      "required": true,
+      "notes": "突出产品核心卖点"
+    },
+    {
+      "seq": 3,
+      "type": "main",
+      "label": "使用场景展示",
+      "description": "产品在实际环境中的使用场景。",
+      "template": "lifestyle-scene",
+      "variant": "indoor",
+      "size": "800x800",
+      "required": true,
+      "notes": "场景化，有生活感"
+    },
+    {
+      "seq": 4,
+      "type": "main",
+      "label": "细节规格展示",
+      "description": "材质、工艺、规格等细节展示。",
+      "template": "detail-macro",
+      "variant": "material",
+      "size": "800x800",
+      "required": true,
+      "notes": "突出工艺和品质"
+    },
+    {
+      "seq": 5,
+      "type": "main",
+      "label": "白底图",
+      "description": "白底图，仅产品主体，用于搜索曝光。",
+      "template": "hero-image",
+      "variant": "minimal",
+      "size": "800x800",
+      "required": false,
+      "notes": "白底图可提升搜索权重"
+    },
+    {
+      "seq": 6,
+      "type": "vertical",
+      "label": "竖版主图（可选）",
+      "description": "3:4竖版图，信息流展示面积更大。",
+      "template": "poster-banner",
+      "variant": "editorial",
+      "size": "750x1000",
+      "required": false,
+      "notes": "3:4比例，建议750x1000，信息流推荐"
+    }
+  ]
+}

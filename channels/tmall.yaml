@@ -1,0 +1,25 @@
+channel:
+  id: tmall
+
+visual:
+  ratios:
+    - "1:1"
+  product_coverage: "50%-70%"
+  safe_margin_px: 48
+  text_density: low
+
+content:
+  product_title:
+    max_chars: 60
+  bullets:
+    count: 5
+    max_chars_each: 28
+  forbidden_patterns:
+    - unsupported_superlative
+  style: direct_conversion
+  allowed:
+    - parameter
+    - benefit
+    - promotion
+  avoid:
+    - overly literary tone

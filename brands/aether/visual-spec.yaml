@@ -1,0 +1,39 @@
+visual:
+  default_ratio: "1:1"
+  rendering_mode: hybrid
+
+layout:
+  density: low
+  product_coverage: "45%-60%"
+  headline_max_lines: 2
+  safe_margin_px: 64
+  logo_position: top-left
+
+product_image:
+  source_required: true
+  preferred_asset_type:
+    - transparent_png
+    - high_res_packshot
+  shadow:
+    enabled: true
+    softness: medium
+  retouching:
+    allow:
+      - background_cleanup
+      - reflection
+      - shadow
+    forbid:
+      - changing_product_shape
+      - changing_logo_on_product
+
+scene_policy:
+  hero:
+    html_dominant: true
+    regenerate_background: false
+  lifestyle:
+    html_dominant: false
+    regenerate_background: true
+    preserve_product_asset: true
+  detail:
+    html_dominant: true
+    macro_generation: optional

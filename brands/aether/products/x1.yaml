@@ -1,0 +1,29 @@
+product:
+  id: x1-headphones
+  name: Aether X1
+  category: wireless-headphones
+  facts:
+    noise_reduction:
+      value: 42
+      unit: dB
+      source:
+        type: lab_report
+        ref: docs/x1-noise-test.pdf
+      status: verified
+    battery:
+      value: 38
+      unit: hours
+      conditions: "ANC off, 50% volume"
+      source:
+        type: product_spec
+        ref: docs/x1-spec.pdf
+      status: verified
+    lightweight:
+      value: 285
+      unit: g
+      source:
+        type: product_spec
+        ref: docs/x1-spec.pdf
+      status: verified
+  assets:
+    packshot: brands/aether/assets/products/x1/packshot.png

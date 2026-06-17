@@ -1,0 +1,30 @@
+{
+  "id": "sensenova-u1-fast",
+  "name": "SenseNova U1-Fast",
+  "provider_type": "openai",
+  "description": "SenseNova U1-Fast via token.sensenova.cn. Moderate fidelity — colors mostly follow, but Style Lock text may render in image and aspect_ratio is ignored.",
+  "endpoint_suffix": "/v1/images/generations",
+  "auth_env": "IMG_API_KEY",
+  "base_url_env": "IMG_BASE_URL",
+  "default_model": "sensenova-u1-fast",
+  "model_env": "IMG_MODEL",
+  "size": {
+    "format": "wxh",
+    "default": "2048x2048",
+    "allowed": ["1024x1024", "2048x2048"],
+    "aspect_ratio_support": false,
+    "notes": "Must specify exact pixel dimensions. --resolution and --aspect_ratio flags are silently ignored."
+  },
+  "prompt_rendering": {
+    "style_lock_method": "bracket_style_context",
+    "style_lock_visible_risk": true,
+    "hex_fidelity": "moderate",
+    "max_chars": 4000,
+    "supports_negative": true,
+    "notes": "Style Lock text may render as visible text. Use bracket-wrapped context. Hex values mostly follow. Rate limits: ~10 req/min burst, ~300/day."
+  },
+  "rate_limit": {
+    "rpm": 10,
+    "rpd": 300
+  }
+}

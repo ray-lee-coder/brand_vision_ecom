@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --brand-primary: {primary};
+    --brand-secondary: {secondary};
+    --brand-accent: {accent};
+    --brand-background: {background};
+    --brand-heading-font: "{heading_font}";
+    --brand-body-font: "{body_font}";
+    --safe-margin: {safe_margin}px;
+    --product-coverage: {product_coverage};
+    --logo-position: {logo_position};
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: {width}px;
+    height: {height}px;
+    overflow: hidden;
+    position: relative;
+    font-family: var(--brand-body-font), sans-serif;
+  }
+  /* ── Background layer (generated or static) ── */
+  .background-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    {background_style}
+    z-index: 0;
+  }
+  .background-layer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* ── Foreground: brand elements + product ── */
+  .foreground-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+    padding: var(--safe-margin);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .logo {
+    position: absolute;
+    top: var(--safe-margin);
+    left: var(--safe-margin);
+    font-family: var(--brand-heading-font), sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .headline {
+    font-family: var(--brand-heading-font), sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-align: center;
+    max-width: 80%;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .subtitle {
+    font-family: var(--brand-body-font), sans-serif;
+    font-size: 16px;
+    color: var(--brand-secondary);
+    text-align: center;
+    max-width: 70%;
+    line-height: 1.5;
+    margin-bottom: 32px;
+  }
+  /* ── Product foreground (FIXED — never modifies product) ── */
+  .product-slot {
+    width: 60%;
+    max-height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .product-slot img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    /* Product image is always loaded from assets — never generated */
+  }
+  .accent-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--brand-accent);
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+  <!-- BACKGROUND LAYER (regenerated independently) -->
+  <div class="background-layer">
+    {background_content}
+  </div>
+
+  <!-- FOREGROUND LAYER (product + brand — FIXED) -->
+  <div class="foreground-layer">
+    <div class="logo">{brand_name}</div>
+    <div class="headline">{headline}</div>
+    <div class="subtitle">{subtitle}</div>
+    <div class="product-slot">
+      <img src="{product_image}" alt="{brand_name} product" data-asset-source="product_facts">
+    </div>
+  </div>
+
+  <div class="accent-bar"></div>
+</body>
+</html>

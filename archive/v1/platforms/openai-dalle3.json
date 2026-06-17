@@ -1,0 +1,26 @@
+{
+  "id": "openai-dalle3",
+  "name": "OpenAI DALL-E 3",
+  "provider_type": "openai",
+  "description": "OpenAI DALL-E 3 via api.openai.com. Good quality but does not follow precise hex values. Use color descriptions instead of codes. Different size constraints.",
+  "endpoint_suffix": "/v1/images/generations",
+  "auth_env": "OPENAI_API_KEY",
+  "base_url_env": "OPENAI_BASE_URL",
+  "default_model": "dall-e-3",
+  "model_env": "OPENAI_MODEL",
+  "size": {
+    "format": "wxh",
+    "default": "1024x1024",
+    "allowed": ["1024x1024", "1024x1792", "1792x1024"],
+    "aspect_ratio_support": true
+  },
+  "prompt_rendering": {
+    "style_lock_method": "style_prefix_semantic",
+    "style_lock_visible_risk": false,
+    "hex_fidelity": "low",
+    "max_chars": 4000,
+    "supports_negative": false,
+    "notes": "Convert hex values to semantic color descriptions (#D4AF37 → 'warm gold'). DALL-E 3 does not follow exact hex values. Use short style prefix instead of long Style Lock."
+  },
+  "rate_limit": null
+}

@@ -1,0 +1,38 @@
+product:
+  id: aether-buds
+  name: Aether Buds
+  category: true-wireless-earbuds
+  facts:
+    noise_reduction:
+      value: 35
+      unit: dB
+      source:
+        type: lab_report
+        ref: docs/buds-noise-test.pdf
+      status: verified
+    battery:
+      value: 8
+      unit: hours
+      conditions: "single charge, ANC on"
+      source:
+        type: product_spec
+        ref: docs/buds-spec.pdf
+      status: verified
+    case_battery:
+      value: 32
+      unit: hours
+      conditions: "with charging case"
+      source:
+        type: product_spec
+        ref: docs/buds-spec.pdf
+      status: verified
+    lightweight:
+      value: 4.2
+      unit: g
+      conditions: "per earbud"
+      source:
+        type: product_spec
+        ref: docs/buds-spec.pdf
+      status: verified
+  assets:
+    packshot: brands/aether/assets/products/buds/packshot.png

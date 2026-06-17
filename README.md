@@ -1,171 +1,187 @@
-# brand_vision_ecom
+# BrandKit
 
-Write your brand's visual rules into a YAML file. Every AI-generated product image uses the same colors, fonts, lighting and composition — no more rewriting prompts per image.
+> **Brand-constrained visual & content compiler for e-commerce.**
+> Write brand rules once. Generate platform-optimized visuals and copy that stay consistent.
 
-This is a **brand-aware Prompt Compiler**: it reads structured brand data, compiles a visual Style Lock, matches a scene template, and calls an image generation API. Currently optimized for GPT-Image-2; see compatibility table below.
+```bash
+git clone https://github.com/ray-lee-coder/brand_vision_ecom.git
+cd brand_vision_ecom
+pip install pyyaml playwright
+python3 -m playwright install chromium
+```
 
----
+## What it does
 
-> ⚠️ **Prompts designed for GPT-Image-2**
-> 
-> The Style Lock structure, scene templates, hex color locking, whitespace declarations, and negative constraints are all tuned for GPT-Image-2's behavior. Results with other models may vary significantly. Known issues with non-GPT models include:
-> - Style Lock text being rendered as visible text in the image
-> - Color hex values not being followed precisely
-> - Numeric constraints (product ratio, whitespace) being ignored
-> - Prohibited items still appearing in outputs
-> 
-> If you're using a different backend, generate a single test image first (`--output /tmp/test.png`) before scaling up.
-
----
+```
+Campaign Task (brand × product × platform)
+  │
+  ├─ Visual Pipeline → HTML + PNG
+  │   ├─ Brand tokens compiled to CSS variables
+  │   ├─ Product image FIXED (never modified)
+  │   ├─ Background independently generatable
+  │   └─ L1 validation (colors, margins, safe areas)
+  │
+  └─ Content Pipeline → Markdown + Provenance
+      ├─ Product facts → message plan
+      ├─ Claim checked against brand rules
+      ├─ Channel adapted (天猫=conversion, 小红书=experience)
+      └─ Provenance: every claim traces to source
+```
 
 ## Quick start
 
 ```bash
-# 1. Clone
-git clone https://github.com/ray-lee-coder/brand_vision_ecom.git
-cd brand_vision_ecom
+# Build a campaign
+bash scripts/brandkit build campaigns/618-launch.yaml
 
-# 2. Install (just pyyaml)
-pip install pyyaml
+# Output in output/
+ls output/
+# tmall-hero.png  xiaohongshu-cover.png  tmall-product_title.md ...
 
-# 3. Configure API (copy .env.example to .env, fill in your key)
-#    IMG_BASE_URL=https://token.sensenova.cn/v1
-#    IMG_MODEL=sensenova-u1-fast
-#    IMG_API_KEY=sk-...
+# Validate channel differentiation
+bash scripts/brandkit validate
 
-# 4. Generate
-python3 scripts/generate_image.py examples/aether/brand.yaml \
-  --product "wireless earbuds, dark navy body, gold accent ring" \
-  --template hero-image
+# Run baseline comparison
+bash scripts/brandkit baseline campaigns/618-launch.yaml --dry-run
 ```
 
-Output: a 2048×2048 PNG file.
+## Spec files
 
----
+| File | Purpose | Location |
+|------|---------|----------|
+| `brand-core.yaml` | Brand identity (colors, fonts, logo, voice, claims) | `brands/aether/` |
+| `visual-spec.yaml` | Visual rules (layout, scene policy, photography) | `brands/aether/` |
+| `content-spec.yaml` | Content rules (message hierarchy, copy rules) | `brands/aether/` |
+| `products/{sku}.yaml` | Product facts with source references | `brands/aether/products/` |
+| `channels/{channel}.yaml` | Platform constraints (visual + content) | `channels/` |
+| `campaigns/{campaign}.yaml` | Campaign task entry | `campaigns/` |
 
-## How it works
+### brand-core.yaml
 
-```
-brand.yaml → compile Style Lock → match template → build prompt → call API → image
-```
-
-1. **brand.yaml** — brand colors, fonts, photography preferences in one file
-2. **Style Lock** — a fixed "visual contract" (hex palette, font names, lighting, product ratio, whitespace) that gets prepended to every prompt
-3. **Scene templates** — 15 built-in templates (hero, lifestyle, flat lay, detail, model, social, UGC, before-after, packaging, infographic, multi-product, multi-angle grid, editorial, seasonal, poster)
-4. **Prompt** — Style Lock + template + product description assembled into a single prompt
-5. **API call** — sent to any OpenAI-compatible image generation endpoint
-
-Multi-image sets (e.g., a PDP) all share the same Style Lock. One lock, consistent output.
-
----
-
-## Why not just write prompts directly?
-
-| Situation | Direct prompting | With brand_vision_ecom |
-|-----------|-----------------|----------------------|
-| Color | "Deep blue" → navy or cobalt? | `#1E3A8A` — same hex every time |
-| Typography | "Modern sans-serif" → LLM picks one | Named font injected into prompt |
-| Consistency | Describe per image → drifts | One Style Lock → all images share it |
-| Switch brands | Rewrite everything from scratch | Swap the brand.yaml file |
-| Multi-image sets | Write each prompt individually | Change `--template`, Style Lock reuses |
-
----
-
-## brand.yaml reference
+Long-term stable brand identity. Example:
 
 ```yaml
 brand:
-  name: "Your Brand"
-  description: "One-line brand description (embedded in prompts)"
-  tone: "cool"                      # warm / cool / neutral
-
-  colors:
-    primary: "#D4AF37"              # Brand primary color (required)
-    accent: "#D4AF37"               # Accent color (optional, defaults to primary)
-    canvas: "#FFFFFF"               # Background color (required)
-    text: "#F7F5F0"                 # Text color (required)
-    surface: "#1B2A4A"             # Surface color (optional)
-    border: "#9DB3CD"              # Border color (optional)
-
-  typography:
-    display: "PP Mori"              # Display/headline font
-    body: "Inter"                   # Body text font
-
-  imagery:                           # Photography preferences (optional, has defaults)
-    primary_lighting: "editorial_cinematic"
-    default_angle: "three_quarter"
-    product_frame_ratio: 0.40
-    background: "pure_white"
-    retouching: "moderate"
-    min_views: 5
-    required_angles:
-      - front
-      - three_quarter_left
-      - three_quarter_right
-      - side_left
-      - detail
+  name: Aether
+  category: audio-tech
+colors:
+  primary: "#111827"
+  accent: "#8B7355"
+  background: "#F7F4EF"
+typography:
+  latin:
+    heading: "Neue Haas Grotesk"
+    body: "Inter"
+voice:
+  tone: [restrained, precise, confident]
+  avoid: [shouting, fake luxury, internet slang]
+claims:
+  require_evidence: ["best", "first", "medical grade", "100%"]
 ```
 
-Two reference brand files in `examples/`: `aether/brand.yaml` (audio-tech, gold + navy) and `nike/brand.yaml` (sport, monochrome).
+### product-facts.yaml
 
----
+Structured product facts with source references:
 
-## Scene templates (15)
+```yaml
+product:
+  id: x1-headphones
+  name: Aether X1
+  facts:
+    noise_reduction:
+      value: 42
+      unit: dB
+      source:
+        type: lab_report
+        ref: docs/x1-noise-test.pdf
+      status: verified
+```
 
-| Template ID | Use case | Variants |
-|-------------|----------|----------|
-| `hero-image` | White background product shot, search result hero | luxury / minimal / tech |
-| `lifestyle-scene` | Lifestyle/usage scene | indoor / outdoor / studio |
-| `flat-lay` | Overhead flat lay, accessories | minimal / styled / bundle |
-| `detail-macro` | Macro close-up, material texture | material / stitching / hardware |
-| `model-showcase` | Model wearing product, fashion | fullbody / halfbody / detail / editorial |
-| `social-media` | Xiaohongshu, Instagram, TikTok | xiaohongshu / instagram / tiktok |
-| `ugc-style` | User-generated content, unboxing, reviews | unboxing / usingselfie / review |
-| `before-after` | Before/after comparison | skincare / cleaner / lighting |
-| `packaging` | Package/box/gift presentation | closed / opened / gift |
-| `infographic` | A+ content, feature grid, comparison table | featuregrid / comparison / specs |
-| `multi-product` | Bundle, product family, series display | row / cluster / tiered |
-| `multi-angle-grid` | Multi-angle grid, color variants | 2x2 / 1x4 / colors |
-| `magazine-editorial` | Editorial, brand campaign | highfashion / stillife / cover |
-| `seasonal-campaign` | Seasonal/holiday campaign | spring / summer / autumn / winter |
-| `poster-banner` | Promotional poster, launch | sale / editorial / launch |
+## Architecture
+
+```
+Spec files (brand-core / visual / content / products / channels / campaign)
+  │
+  ▼
+Compiler (compile.py)
+  ├─ Spec merge with priority resolution
+  ├─ Hard constraint conflict detection
+  └─ resolved-task.json + message-plan.json
+        │
+        ▼
+Visual Renderer (render_visual.py)    Content Renderer (render_content.py)
+  ├─ HTML Compositor                     ├─ Fact Resolver
+  ├─ Background Generator                ├─ Message Planner
+  ├─ Product image FIXED                 ├─ Copy Generator (LLM)
+  └─ Playwright → PNG                    ├─ Claim Checker
+                                         └─ Markdown + Provenance
+        │
+        ▼
+Verifier (verify.py)
+  ├─ L1 CSS assertions (colors, margins)
+  ├─ Claim checker (forbidden phrases, require_evidence)
+  ├─ Build blocking (hard constraint violations)
+  └─ Channel diff report (天猫 vs 小红书 structural differences)
+```
+
+## CLI
 
 ```bash
-# Switch templates freely
-python3 scripts/generate_image.py examples/aether/brand.yaml \
-  --product "..." --template lifestyle-scene
-
-# Use --variant for a style variant
-python3 scripts/generate_image.py examples/aether/brand.yaml \
-  --product "..." --template poster-banner --variant editorial
+brandkit init <brand>         # Initialize a new brand directory
+brandkit build [campaign]     # Build single campaign kit
+brandkit build-all            # Build all campaigns
+brandkit render visual        # Render visual outputs
+brandkit render content       # Render content outputs
+brandkit render ab            # Generate A/B drafts
+brandkit verify               # Verify outputs against brand rules
+brandkit validate             # Validate channel differentiation
+brandkit baseline [campaign]  # Run pure-prompt baseline comparison
+brandkit clean                # Clean build artifacts
 ```
 
----
+User doesn't need to memorize CLI. Agent (Claude Code / Codex / Cursor) interprets:
 
-## Model compatibility
+> "按 Aether 品牌规范，给 X1 耳机做一套 618 首发物料。先出天猫主图、小红书封面、天猫标题和五点描述。"
 
-| Model | Style Lock fidelity | Tested |
-|-------|-------------------|--------|
-| GPT-Image-2 (apimart.ai) | ✅ Best — hex values, ratio, whitespace, negatives all work | ✅ Yes |
-| SenseNova U1-Fast | ⚠️ Moderate — colors mostly follow, may render text in image | ✅ Yes |
-| Other OpenAI-compatible | ❓ Unknown — test one image first before batch | ❌ No |
+## Non-goals
 
-**Tip:** Always run `python3 scripts/generate_image.py ... --output /tmp/test.png` first to verify output quality before batch generation.
+- No Web App, database, or user accounts
+- No Figma plugin or design tool integration
+- No full video production, 3D rendering, or advanced animation
+- No marketing automation or CRM workflows
+- No multi-user collaboration or approval flows
+- No PPTX / DOCX / MP4 as primary output (experimental only)
 
----
-
-## Project structure
+## Example output
 
 ```
-├── scripts/generate_image.py      Core script (~260 lines)
-├── templates/                     15 scene templates (JSON)
-├── schemas/brand.schema.json      Brand data specification
-├── examples/
-│   ├── aether/brand.yaml          Audio-tech brand example (gold + navy)
-│   └── nike/brand.yaml            Sport brand example (monochrome)
-├── .env.example                   API config template
-├── README.md                      This file
-└── README.zh.md                   Chinese version
+output/aether-618/
+├── visual/
+│   ├── tmall-hero.png          # Brand-colored product hero (800×800)
+│   ├── xiaohongshu-cover.png   # Lifestyle cover for Xiaohongshu (600×800)
+│   └── preview.html            # Editable HTML preview
+├── content/
+│   ├── tmall-product_title.md  # "Aether X1 沉浸降噪 — 618限时特惠"
+│   ├── tmall-bullet_points.md  # 5-point description with fact sources
+│   ├── xiaohongshu-note.md     # Experience-style note
+│   └── xiaohongshu-title.md    # Cover title
+├── verify/
+│   ├── visual-report.json      # L1 assertion results
+│   ├── content-report.json     # Claim checker results
+│   └── channel-diff-report.json # Cross-platform structural differences
+└── .visual-provenance.json     # Version tracking
 ```
 
-Zero external Git dependencies. Clone, `pip install pyyaml`, configure `.env`, and you're ready to generate.
+## Roadmap
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| M0-A | Compiler Spine (spec merge + conflict detection) | ✅ |
+| M0-B | Campaign Kit (2 visual + 4 content outputs) | ✅ |
+| M1 | Content Governance (provenance, claim checking, channel diff) | ✅ |
+| M2 | Visual Hybrid (foreground/background separation, local regenerate) | ✅ |
+| M3 | Skill Distribution (SKILL.md, README, GitHub sync) | ✅ |
+
+## License
+
+MIT

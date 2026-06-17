@@ -1,0 +1,26 @@
+{
+  "id": "gpt-image-2",
+  "name": "GPT-Image-2",
+  "provider_type": "openai",
+  "description": "GPT-Image-2 via apimart.ai or compatible endpoint. Full Style Lock fidelity — hex values, ratio constraints, whitespace, and prohibitions all work.",
+  "endpoint_suffix": "/v1/images/generations",
+  "auth_env": "IMG_API_KEY",
+  "base_url_env": "IMG_BASE_URL",
+  "default_model": "gpt-image-2",
+  "model_env": "IMG_MODEL",
+  "size": {
+    "format": "wxh",
+    "default": "2048x2048",
+    "allowed": ["1024x1024", "1024x1792", "1792x1024", "2048x2048"],
+    "aspect_ratio_support": true
+  },
+  "prompt_rendering": {
+    "style_lock_method": "prepend_and_body",
+    "style_lock_visible_risk": false,
+    "hex_fidelity": "exact",
+    "max_chars": 10000,
+    "supports_negative": true,
+    "notes": "Style Lock text stays invisible. Hex values followed strictly. Ratio and whitespace constraints work."
+  },
+  "rate_limit": null
+}

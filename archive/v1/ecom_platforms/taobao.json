@@ -1,0 +1,76 @@
+{
+  "id": "taobao",
+  "name": "淘宝",
+  "description": "淘宝/天猫商品主图套图。5张主图+可选长图。第5张强制白底。",
+  "default_size": "800x800",
+  "format": "jpg",
+  "max_size_kb": 500,
+  "image_set": [
+    {
+      "seq": 1,
+      "type": "main",
+      "label": "首图主图",
+      "description": "产品居中展示，白底/浅色底。突出主体，可加核心卖点文字。",
+      "template": "hero-image",
+      "variant": "",
+      "size": "800x800",
+      "required": true,
+      "notes": "建议上传1000x1000以上，支持PC端放大镜"
+    },
+    {
+      "seq": 2,
+      "type": "main",
+      "label": "多角度/卖点展示",
+      "description": "多角度展示产品，或标注核心功能卖点。",
+      "template": "lifestyle-scene",
+      "variant": "studio",
+      "size": "800x800",
+      "required": true,
+      "notes": "可与第1张不同角度"
+    },
+    {
+      "seq": 3,
+      "type": "main",
+      "label": "细节/材质特写",
+      "description": "产品细节、材质、工艺特写。",
+      "template": "detail-macro",
+      "variant": "material",
+      "size": "800x800",
+      "required": true,
+      "notes": "突出工艺质感"
+    },
+    {
+      "seq": 4,
+      "type": "main",
+      "label": "使用场景/功能",
+      "description": "产品使用场景展示，强调功能和应用。",
+      "template": "lifestyle-scene",
+      "variant": "indoor",
+      "size": "800x800",
+      "required": true,
+      "notes": "场景化展示"
+    },
+    {
+      "seq": 5,
+      "type": "main",
+      "label": "白底图（强制）",
+      "description": "纯白背景，仅展示产品主体。用于手淘搜索流量。",
+      "template": "hero-image",
+      "variant": "minimal",
+      "size": "800x800",
+      "required": true,
+      "notes": "强制白底，38KB~300KB，无文字无水印"
+    },
+    {
+      "seq": 6,
+      "type": "long",
+      "label": "长图（可选）",
+      "description": "2:3竖版长图，用于猜你喜欢推荐场景。",
+      "template": "poster-banner",
+      "variant": "editorial",
+      "size": "800x1200",
+      "required": false,
+      "notes": "2:3比例，仅推荐场景使用"
+    }
+  ]
+}
