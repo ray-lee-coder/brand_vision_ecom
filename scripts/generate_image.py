@@ -5,7 +5,7 @@ brand_vision_ecom — 品牌约束电商生图工具
 用法:
   python3 generate_image.py examples/aether/brand.yaml --product "无线耳塞" --template hero-image
   python3 generate_image.py examples/aether/brand.yaml --product "无线耳塞" --template lifestyle-scene --size 1536x2048
-  python3 generate_image.py examples/nike/brand.yaml --product "跑鞋" --template multi-angle-grid --output-dir ./outputs
+  python3 generate_image.py examples/nike/brand.yaml --product "跑鞋" --template multi-angle-grid --output ./outputs
 
 读取 brand.yaml → 编译 Style Lock → 匹配场景模板 → 调用 API → 出图。
 """
@@ -89,13 +89,14 @@ def compile_style_lock(brand: dict) -> str:
     angle = img.get("default_angle", "three_quarter")
     ratio = img.get("product_frame_ratio", 0.35)
 
-    # 提取品牌调性关键词（取 description 前 10 个词）
-    kw = " ".join(desc.split()[:10]) if desc else f"{b['name']} brand"
+    # 品牌调性关键词（取 description 前 10 个词）
+    brand_keywords = (" " + " ".join(desc.split()[:10])) if desc else ""
 
     pct = int(ratio * 100)
     gap = 100 - pct
 
     lock = (
+        f"brand identity{brand_keywords}; "
         f"fixed palette of {c['primary']} primary, {c.get('accent', c['primary'])} accent, "
         f"{c['canvas']} canvas, {c['text']} text; "
         f"{tone} tone, {lighting} lighting; "
@@ -123,7 +124,10 @@ def build_prompt(brand: dict, template: dict, product_desc: str, variant: str = 
 
     # 检查变体
     overrides = {}
-    if variant and variant in template.get("variants", {}):
+    if variant:
+        if variant not in template.get("variants", {}):
+            valid = ", ".join(template.get("variants", {}).keys())
+            fail(f"模板 '{template['id']}' 没有变体 '{variant}'。可用变体: {valid or '无'}")
         overrides = template["variants"][variant].get("overrides", {})
 
     bg = overrides.get("background", template["defaults"]["background"])
@@ -135,11 +139,15 @@ def build_prompt(brand: dict, template: dict, product_desc: str, variant: str = 
     body = body.replace("{background}", bg)
     body = body.replace("{lighting}", lt)
     body = body.replace("{composition}", comp)
+    # 替换模板特有的附加变量（如 {season}, {name} 等）
+    b = brand["brand"]
+    extras = {"name": b["name"]}
+    for key, val in extras.items():
+        body = body.replace("{" + key + "}", val)
 
-    prohibitions = (
-        "不要添加：道具、手、水印、假 logo、额外文字、装饰元素、渐变背景。"
-        "顶部中央 200×100 区域留空（价格叠加区）。"
-    )
+    # 模板级否定清单（覆盖全局默认）
+    default_prohibitions = "不要添加：水印、假 logo、额外装饰与文字。顶部中央 200×100 区域留空（价格叠加区）。"
+    prohibitions = template.get("prohibitions", default_prohibitions)
 
     prompt = (
         f"Campaign Style Lock: {lock}.\n\n"
@@ -188,15 +196,23 @@ def call_api(base_url: str, model: str, api_key: str, prompt: str, size: str, ou
     try:
         resp = urllib.request.urlopen(req, timeout=120)
         result = json.loads(resp.read().decode())
-        img_url = result["data"][0]["url"]
+        item = result["data"][0]
+        # 处理两种返回格式：url（代理接口）或 b64_json（OpenAI 官方）
+        if "url" in item and item["url"]:
+            img_url = item["url"]
+            print("下载 ...", end=" ", flush=True)
+            import subprocess
+            subprocess.run(["curl", "-sL", img_url, "-o", output_path], check=True, capture_output=True)
+        elif "b64_json" in item and item["b64_json"]:
+            print("解码 ...", end=" ", flush=True)
+            with open(output_path, "wb") as f:
+                f.write(base64.b64decode(item["b64_json"]))
+        else:
+            fail(f"API 返回中没有 url 或 b64_json 字段: {json.dumps(item)[:200]}")
     except urllib.error.HTTPError as e:
         body = e.read().decode()[:200]
         fail(f"API 错误 (HTTP {e.code}): {body}")
 
-    # 下载图片
-    print("下载 ...", end=" ", flush=True)
-    import subprocess
-    subprocess.run(["curl", "-sL", img_url, "-o", output_path], check=True, capture_output=True)
     size_kb = Path(output_path).stat().st_size / 1024
     print(f"完成 ({size_kb:.0f} KB)")
     return output_path
@@ -244,10 +260,23 @@ def main():
     print("[5/5] 调用生图 API ...")
     base_url, model, api_key = load_api_config(args.env)
 
-    output_dir = args.output or str(Path.cwd() / "outputs")
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    output_path = Path(output_dir) / f"{brand['name'].lower().replace(' ','-')}-{args.template}-{timestamp}.png"
+    # 处理 --output：是文件路径还是目录
+    if args.output:
+        out = Path(args.output)
+        if out.suffix in (".png", ".jpg", ".jpeg", ".webp"):
+            # 是文件路径
+            output_path = out
+            out.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            # 是目录
+            out.mkdir(parents=True, exist_ok=True)
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            output_path = out / f"{brand['name'].lower().replace(' ','-')}-{args.template}-{timestamp}.png"
+    else:
+        output_path = Path.cwd() / "outputs"
+        output_path.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        output_path = output_path / f"{brand['name'].lower().replace(' ','-')}-{args.template}-{timestamp}.png"
 
     call_api(base_url, model, api_key, prompt, args.size, str(output_path))
 

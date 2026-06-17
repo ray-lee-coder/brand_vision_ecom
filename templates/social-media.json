@@ -7,6 +7,7 @@
     "lighting": "natural daylight, slightly warm",
     "composition": "lifestyle flat lay or scene, social media aspect, engaging"
   },
+  "prohibitions": "不要添加水印、假 logo。保持自然生活感，可以包含日常道具和植物。顶部中央 200×100 区域留空。",
   "prompt_template": {
     "type": "social media content photography",
     "subject": "social media style shot, {product_description}",

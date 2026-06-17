@@ -7,6 +7,7 @@
     "lighting": "natural indoor light, slightly imperfect, warm",
     "composition": "hand-held phone camera perspective, candid"
   },
+  "prohibitions": "不要过度修图，不要过度专业打光，保持真实感。不要添加水印、假 logo、夸张装饰。",
   "prompt_template": {
     "type": "user generated content photography",
     "subject": "real person using {product_description} at home, UGC style",

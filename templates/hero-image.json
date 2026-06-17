@@ -7,6 +7,7 @@
     "lighting": "soft diffused studio lighting",
     "composition": "centered, front view"
   },
+  "prohibitions": "纯白背景，不要添加：道具、手、水印、假 logo。顶部中央 200×100 区域留空（价格叠加区）。不要使用渐变背景。",
   "prompt_template": {
     "type": "product photography",
     "subject": "{product_description}",

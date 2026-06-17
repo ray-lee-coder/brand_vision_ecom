@@ -7,6 +7,7 @@
     "lighting": "cinematic dramatic lighting, high contrast",
     "composition": "heroic composition, negative space for typography, editorial crop"
   },
+  "prohibitions": "不要添加水印、假 logo。可以包含戏剧性光影和深色背景。顶部留空用于排版。",
   "prompt_template": {
     "type": "editorial magazine photography",
     "subject": "editorial fashion shoot featuring {product_description}",

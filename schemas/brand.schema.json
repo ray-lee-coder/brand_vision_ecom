@@ -13,7 +13,7 @@
         "name": { "type": "string", "description": "品牌名称" },
         "colors": {
           "type": "object",
-          "required": ["primary", "canvas"],
+          "required": ["primary", "canvas", "text"],
           "description": "品牌色板。所有颜色用 hex 值（#FFFFFF），不用颜色名",
           "properties": {
             "primary":  { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "品牌主色：CTA 按钮、品牌标志、强调元素" },

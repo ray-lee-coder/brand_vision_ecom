@@ -7,6 +7,7 @@
     "lighting": "warm natural light, golden hour feel",
     "composition": "asymmetric, environmental context"
   },
+  "prohibitions": "不要添加：水印、假 logo、夸张的装饰元素。场景自然真实，不要过度修图。顶部中央 200×100 区域留空（价格叠加区）。",
   "prompt_template": {
     "type": "lifestyle photography",
     "subject": "{product_description} in use, lifestyle setting",
