@@ -41,9 +41,21 @@
         },
         "description": {
           "type": "string",
-          "description": "品牌风格一句话描述。会被嵌入 Style Lock 的 Prompt 第一段"
+          "description": "Brand style description. Injected into Style Lock."
+        },
+        "imagery": {
+          "type": "object",
+          "description": "Product photography preferences",
+          "properties": {
+            "primary_lighting": { "type": "string", "enum": ["studio_soft", "studio_hard", "natural_diffuse", "natural_dramatic", "editorial_cinematic", "flat_even"], "description": "Default lighting setup" },
+            "default_angle": { "type": "string", "enum": ["front", "three_quarter", "side", "top_down", "detail_closeup", "lifestyle_context"] },
+            "product_frame_ratio": { "type": "number", "minimum": 0.1, "maximum": 0.9, "default": 0.35 },
+            "background": { "type": "string", "enum": ["pure_white", "soft_cloud", "brand_canvas", "lifestyle_ambient"] },
+            "retouching": { "type": "string", "enum": ["minimal", "light", "moderate", "heavy"] }
+          }
         }
       }
     }
-  }
+  },
+  "additionalProperties": false
 }

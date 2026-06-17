@@ -9,7 +9,7 @@
   },
   "prompt_template": {
     "type": "seasonal campaign photography",
-    "subject": "seasonal campaign image, {product_description} in {season} setting",
+    "subject": "seasonal campaign image, {product_description} in {variant} setting",
     "background": "{background}",
     "lighting": "{lighting}",
     "composition": "{composition}",

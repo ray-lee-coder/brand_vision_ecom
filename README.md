@@ -1,8 +1,8 @@
 # brand_vision_ecom
 
-Write your brand's visual rules into a YAML file. Every AI-generated product image follows those rules — colors, fonts, lighting, composition — consistently, every time.
+Write your brand's visual rules into a YAML file. Every AI-generated product image uses the same colors, fonts, lighting and composition — no more rewriting prompts per image.
 
-No more rewriting prompts per image. No more wrong hex codes. No more each image looking like a different brand.
+This is a **brand-aware Prompt Compiler**: it reads structured brand data, compiles a visual Style Lock, matches a scene template, and calls an image generation API. Currently optimized for GPT-Image-2; see compatibility table below.
 
 ---
 
@@ -63,8 +63,8 @@ Multi-image sets (e.g., a PDP) all share the same Style Lock. One lock, consiste
 
 | Situation | Direct prompting | With brand_vision_ecom |
 |-----------|-----------------|----------------------|
-| Color | "Deep blue" → navy or cobalt? | `#1E3A8A` — exact, every time |
-| Typography | "Modern sans-serif" → LLM picks one | `Inter` is Inter |
+| Color | "Deep blue" → navy or cobalt? | `#1E3A8A` — same hex every time |
+| Typography | "Modern sans-serif" → LLM picks one | Named font injected into prompt |
 | Consistency | Describe per image → drifts | One Style Lock → all images share it |
 | Switch brands | Rewrite everything from scratch | Swap the brand.yaml file |
 | Multi-image sets | Write each prompt individually | Change `--template`, Style Lock reuses |
@@ -120,13 +120,13 @@ Two reference brand files in `examples/`: `aether/brand.yaml` (audio-tech, gold 
 | `detail-macro` | Macro close-up, material texture | material / stitching / hardware |
 | `model-showcase` | Model wearing product, fashion | fullbody / halfbody / detail / editorial |
 | `social-media` | Xiaohongshu, Instagram, TikTok | xiaohongshu / instagram / tiktok |
-| `ugc-style` | User-generated content, unboxing, reviews | unboxing / using_selfie / review |
+| `ugc-style` | User-generated content, unboxing, reviews | unboxing / usingselfie / review |
 | `before-after` | Before/after comparison | skincare / cleaner / lighting |
 | `packaging` | Package/box/gift presentation | closed / opened / gift |
-| `infographic` | A+ content, feature grid, comparison table | feature_grid / comparison / specs |
+| `infographic` | A+ content, feature grid, comparison table | featuregrid / comparison / specs |
 | `multi-product` | Bundle, product family, series display | row / cluster / tiered |
 | `multi-angle-grid` | Multi-angle grid, color variants | 2x2 / 1x4 / colors |
-| `magazine-editorial` | Editorial, brand campaign | high_fashion / still_life / cover |
+| `magazine-editorial` | Editorial, brand campaign | highfashion / stillife / cover |
 | `seasonal-campaign` | Seasonal/holiday campaign | spring / summer / autumn / winter |
 | `poster-banner` | Promotional poster, launch | sale / editorial / launch |
 
