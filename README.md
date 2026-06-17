@@ -1,7 +1,45 @@
 # BrandKit
 
-> **Brand-constrained visual & content compiler for e-commerce.**
-> Write brand rules once. Generate platform-optimized visuals and copy that stay consistent.
+> **Spec-driven brand asset compiler for e-commerce. Write brand rules once. Generate platform-optimized visuals and copy — with provenance, not guesswork.**
+
+---
+
+## Features
+
+| Icon | Feature | What it means |
+|------|---------|---------------|
+| 🚀 | **One spec, two pipelines** | `brand-core.yaml` drives both visual (HTML+PNG) and content (Markdown) generation from the same campaign brief |
+| 🔍 | **Every claim has a source** | Product facts with lab reports, spec sheets, certifications. Content provenance shows exactly where each number came from |
+| 🛡️ | **Build blocks on violations** | Forbidden colors, unsupported claims, missing product assets, unknown channels — hard constraints fail the build, not silently degrade |
+| ♻️ | **Local regeneration** | Change background → only background regenerates. Change copy → no image call. Product foreground is **always fixed** |
+| 🧩 | **Campaign-structured output** | `output/{campaign}/visual/`, `output/{campaign}/content/`, `output/{campaign}/verify/` — ready for review and delivery |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Spec** | YAML with structured merge priorities |
+| **Compiler** | Python 3.9+ (stdlib + yaml) |
+| **Visual Renderer** | HTML/CSS + Playwright (headless Chromium → PNG) |
+| **Copy Generator** | LLM API (SenseNova / DeepSeek) with structured constraints |
+| **Validation** | Playwright CSS assertions + claim provenance graph |
+| **Channel Validator** | Structural feature extraction (emoji, first-person, parameters, CTA) |
+| **CLI** | Single `brandkit` shell entry point |
+| **Tests** | pytest (9 audit compliance tests) |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.9+
+- API key for Copy Generator (SenseNova or OpenAI-compatible): set `SENSENOVA_API_KEY` in your environment
+- (Optional) Playwright for PNG rendering
+
+### Installation
 
 ```bash
 git clone https://github.com/ray-lee-coder/brand_vision_ecom.git
@@ -10,167 +48,85 @@ pip install pyyaml playwright
 python3 -m playwright install chromium
 ```
 
-## What it does
-
-```
-Campaign Task (brand × product × platform)
-  │
-  ├─ Visual Pipeline → HTML + PNG
-  │   ├─ Brand tokens compiled to CSS variables
-  │   ├─ Product image FIXED (never modified)
-  │   ├─ Background independently generatable
-  │   └─ L1 validation (colors, margins, safe areas)
-  │
-  └─ Content Pipeline → Markdown + Provenance
-      ├─ Product facts → message plan
-      ├─ Claim checked against brand rules
-      ├─ Channel adapted (天猫=conversion, 小红书=experience)
-      └─ Provenance: every claim traces to source
-```
-
-## Quick start
+### Usage
 
 ```bash
-# Build a campaign
+# Build a campaign — real LLM generation (no --dry-run needed)
 bash scripts/brandkit build campaigns/618-launch.yaml
 
-# Output in output/
-ls output/
-# tmall-hero.png  xiaohongshu-cover.png  tmall-product_title.md ...
+# Output is in output/{campaign}/
+ls output/618-launch/
+# visual/  content/  verify/
 
-# Validate channel differentiation
-bash scripts/brandkit validate
+# For development without API calls:
+bash scripts/brandkit build campaigns/618-launch.yaml --offline
 
-# Run baseline comparison
-bash scripts/brandkit baseline campaigns/618-launch.yaml --dry-run
+# Run audit compliance tests
+python3 -m pytest tests/test_audit.py -v
 ```
 
-## Spec files
+### What a user says to their Agent
 
-| File | Purpose | Location |
-|------|---------|----------|
-| `brand-core.yaml` | Brand identity (colors, fonts, logo, voice, claims) | `brands/aether/` |
-| `visual-spec.yaml` | Visual rules (layout, scene policy, photography) | `brands/aether/` |
-| `content-spec.yaml` | Content rules (message hierarchy, copy rules) | `brands/aether/` |
-| `products/{sku}.yaml` | Product facts with source references | `brands/aether/products/` |
-| `channels/{channel}.yaml` | Platform constraints (visual + content) | `channels/` |
-| `campaigns/{campaign}.yaml` | Campaign task entry | `campaigns/` |
+> "按 Aether 品牌给 X1 耳机做一套 618 首发物料。先出天猫主图、小红书封面、天猫标题和五点描述。"
 
-### brand-core.yaml
+Agent reads SKILL.md → calls `brandkit build` → shows output.
 
-Long-term stable brand identity. Example:
+---
 
-```yaml
-brand:
-  name: Aether
-  category: audio-tech
-colors:
-  primary: "#111827"
-  accent: "#8B7355"
-  background: "#F7F4EF"
-typography:
-  latin:
-    heading: "Neue Haas Grotesk"
-    body: "Inter"
-voice:
-  tone: [restrained, precise, confident]
-  avoid: [shouting, fake luxury, internet slang]
-claims:
-  require_evidence: ["best", "first", "medical grade", "100%"]
-```
-
-### product-facts.yaml
-
-Structured product facts with source references:
-
-```yaml
-product:
-  id: x1-headphones
-  name: Aether X1
-  facts:
-    noise_reduction:
-      value: 42
-      unit: dB
-      source:
-        type: lab_report
-        ref: docs/x1-noise-test.pdf
-      status: verified
-```
-
-## Architecture
+## Structure
 
 ```
-Spec files (brand-core / visual / content / products / channels / campaign)
-  │
-  ▼
-Compiler (compile.py)
-  ├─ Spec merge with priority resolution
-  ├─ Hard constraint conflict detection
-  └─ resolved-task.json + message-plan.json
-        │
-        ▼
-Visual Renderer (render_visual.py)    Content Renderer (render_content.py)
-  ├─ HTML Compositor                     ├─ Fact Resolver
-  ├─ Background Generator                ├─ Message Planner
-  ├─ Product image FIXED                 ├─ Copy Generator (LLM)
-  └─ Playwright → PNG                    ├─ Claim Checker
-                                         └─ Markdown + Provenance
-        │
-        ▼
-Verifier (verify.py)
-  ├─ L1 CSS assertions (colors, margins)
-  ├─ Claim checker (forbidden phrases, require_evidence)
-  ├─ Build blocking (hard constraint violations)
-  └─ Channel diff report (天猫 vs 小红书 structural differences)
+BrandKit/
+├── SKILL.md                    ← Agent reads this
+├── brands/aether/
+│   ├── brand-core.yaml         ← Colors, fonts, logo, voice, claims
+│   ├── visual-spec.yaml        ← Layout, scene policy, photography
+│   ├── content-spec.yaml       ← Message hierarchy, copy rules
+│   └── products/
+│       ├── x1.yaml             ← Product facts + source references
+│       ├── x1-pro.yaml
+│       └── buds.yaml
+├── campaigns/
+│   ├── 618-launch.yaml         ← Campaign task entry
+│   ├── 618-pro-launch.yaml
+│   └── 618-buds-launch.yaml
+├── channels/
+│   ├── tmall.yaml              ← Platform constraints (visual + content)
+│   └── xiaohongshu.yaml
+├── scripts/
+│   ├── brandkit                ← CLI entry point
+│   ├── compile.py              ← Spec merge + conflict detection
+│   ├── copy_generator.py       ← Constrained LLM copy generation
+│   ├── render_visual.py        ← HTML Compositor + Playwright → PNG
+│   ├── render_content.py       ← Content pipeline → Markdown
+│   ├── verify.py               ← L1 assertions + claim graph
+│   └── validate_channel.py     ← Cross-platform diff report
+├── tests/
+│   └── test_audit.py           ← 10 audit compliance tests
+└── output/                     ← Generated by `brandkit build`
+    └── {campaign}/
+        ├── visual/             ← PNG + HTML preview
+        ├── content/            ← Markdown + provenance JSON
+        └── verify/             ← Validation reports
 ```
 
-## CLI
+---
 
-```bash
-brandkit init <brand>         # Initialize a new brand directory
-brandkit build [campaign]     # Build single campaign kit
-brandkit build-all            # Build all campaigns
-brandkit render visual        # Render visual outputs
-brandkit render content       # Render content outputs
-brandkit render ab            # Generate A/B drafts
-brandkit verify               # Verify outputs against brand rules
-brandkit validate             # Validate channel differentiation
-brandkit baseline [campaign]  # Run pure-prompt baseline comparison
-brandkit clean                # Clean build artifacts
+## How it works
+
+```text
+User prompt → Agent reads SKILL.md
+  ↓
+brandkit build {campaign}.yaml
+  ├─ compile.py → resolved-task.json + message-plan.json
+  ├─ render_visual.py → HTML + PNG (message-plan headline)
+  ├─ render_content.py → Markdown + provenance (Copーテキスト Generator LLM)
+  └─ verify.py → L1 assertions + claim graph + build blocking
+  ↓
+output/{campaign}/
 ```
 
-User doesn't need to memorize CLI. Agent (Claude Code / Codex / Cursor) interprets:
-
-> "按 Aether 品牌规范，给 X1 耳机做一套 618 首发物料。先出天猫主图、小红书封面、天猫标题和五点描述。"
-
-## Non-goals
-
-- No Web App, database, or user accounts
-- No Figma plugin or design tool integration
-- No full video production, 3D rendering, or advanced animation
-- No marketing automation or CRM workflows
-- No multi-user collaboration or approval flows
-- No PPTX / DOCX / MP4 as primary output (experimental only)
-
-## Example output
-
-```
-output/aether-618/
-├── visual/
-│   ├── tmall-hero.png          # Brand-colored product hero (800×800)
-│   ├── xiaohongshu-cover.png   # Lifestyle cover for Xiaohongshu (600×800)
-│   └── preview.html            # Editable HTML preview
-├── content/
-│   ├── tmall-product_title.md  # "Aether X1 沉浸降噪 — 618限时特惠"
-│   ├── tmall-bullet_points.md  # 5-point description with fact sources
-│   ├── xiaohongshu-note.md     # Experience-style note
-│   └── xiaohongshu-title.md    # Cover title
-├── verify/
-│   ├── visual-report.json      # L1 assertion results
-│   ├── content-report.json     # Claim checker results
-│   └── channel-diff-report.json # Cross-platform structural differences
-└── .visual-provenance.json     # Version tracking
-```
+---
 
 ## Roadmap
 
@@ -179,8 +135,12 @@ output/aether-618/
 | M0-A | Compiler Spine (spec merge + conflict detection) | ✅ |
 | M0-B | Campaign Kit (2 visual + 4 content outputs) | ✅ |
 | M1 | Content Governance (provenance, claim checking, channel diff) | ✅ |
-| M2 | Visual Hybrid (foreground/background separation, local regenerate) | ✅ |
-| M3 | Skill Distribution (SKILL.md, README, GitHub sync) | ✅ |
+| M2 | Visual Hybrid (foreground/background separation, local regenerate) | ⚡ M2-A protocol done |
+| M3 | Agent Distribution (SKILL.md, README, GitHub) | ✅ |
+| M2-B | Real image background generation | 🔄 |
+| M4 | Plugin packaging + multi-agent test regression | 🔄 |
+
+---
 
 ## License
 
