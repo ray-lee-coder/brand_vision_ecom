@@ -1,0 +1,31 @@
+product:
+  id: acme-drink1
+  name: Acme Sparkling Citrus
+  category: sparkling-beverage
+  facts:
+    vitamin_c:
+      value: 100
+      unit: mg
+      conditions: "per 330ml can"
+      source:
+        type: lab_report
+        ref: docs/acme-formula.pdf
+      status: verified
+    calorie_free:
+      value: 0
+      unit: kcal
+      conditions: "per 100ml"
+      source:
+        type: lab_report
+        ref: docs/acme-test.pdf
+      status: verified
+    natural_ingredients:
+      value: 100
+      unit: "%"
+      conditions: "from natural sources"
+      source:
+        type: quality_cert
+        ref: docs/acme-formula.pdf
+      status: verified
+  assets:
+    packshot: brands/acme/assets/products/drink1/packshot.png

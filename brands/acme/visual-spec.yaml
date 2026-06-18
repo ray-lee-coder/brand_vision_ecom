@@ -1,0 +1,49 @@
+visual:
+  default_ratio: "3:4"
+  rendering_mode: vibrant
+
+layout:
+  density: high
+  product_coverage: "50%-70%"
+  headline_max_lines: 3
+  safe_margin_px: 48
+  logo_position: top-center
+
+product_image:
+  source_required: true
+  preferred_asset_type:
+    - transparent_png
+    - lifestyle_photo
+  shadow:
+    enabled: true
+    softness: soft
+  retouching:
+    allow:
+      - color_enhancement
+      - condensation_drops
+      - ice_cubes_added
+      - splash_effects
+    forbid:
+      - changing_label_design
+      - removing_bubbles
+
+scene_policy:
+  hero:
+    html_dominant: true
+    regenerate_background: false
+  lifestyle:
+    html_dominant: false
+    regenerate_background: true
+    preserve_product_asset: true
+    background_prompt: "Sunny outdoor picnic setting with fresh fruits"
+  feature-grid:
+    html_dominant: true
+    regenerate_background: false
+  packshot:
+    html_dominant: false
+    regenerate_background: true
+    preserve_product_asset: true
+    background_prompt: "Bright refreshing beverage photography, ice condensation, splash effects"
+  detail:
+    html_dominant: true
+    macro_generation: optional

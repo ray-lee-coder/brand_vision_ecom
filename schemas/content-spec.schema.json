@@ -25,7 +25,7 @@
             "headline": {
               "type": "object",
               "properties": {
-                "style": { "type": "string", "enum": ["concise", "descriptive", "question"] },
+                "style": { "type": "string", "enum": ["concise", "descriptive", "question", "vivid", "bold"] },
                 "avoid_question": { "type": "boolean" }
               }
             }

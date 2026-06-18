@@ -8,7 +8,7 @@
       "type": "object",
       "properties": {
         "default_ratio": { "type": "string", "pattern": "^\\d+:\\d+$" },
-        "rendering_mode": { "type": "string", "enum": ["hybrid", "html_only", "gen_only"] }
+        "rendering_mode": { "type": "string", "enum": ["hybrid", "html_only", "gen_only", "vibrant", "minimal"] }
       }
     },
     "layout": {
@@ -18,7 +18,7 @@
         "product_coverage": { "type": "string", "pattern": "^\\d+%-\\d+%$" },
         "headline_max_lines": { "type": "integer", "minimum": 1 },
         "safe_margin_px": { "type": "integer", "minimum": 0 },
-        "logo_position": { "type": "string", "enum": ["top-left", "top-right", "bottom-left", "bottom-right", "hidden"] }
+        "logo_position": { "type": "string", "enum": ["top-left", "top-right", "bottom-left", "bottom-right", "hidden", "top-center", "bottom-center"] }
       }
     },
     "product_image": {
@@ -33,7 +33,7 @@
           "type": "object",
           "properties": {
             "enabled": { "type": "boolean" },
-            "softness": { "type": "string", "enum": ["low", "medium", "high"] }
+            "softness": { "type": "string", "enum": ["low", "medium", "high", "soft", "hard"] }
           }
         },
         "retouching": {

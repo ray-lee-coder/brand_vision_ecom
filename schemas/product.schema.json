@@ -22,7 +22,7 @@
                 "source": {
                   "type": "object",
                   "properties": {
-                    "type": { "type": "string", "enum": ["lab_report", "product_spec", "certification", "third_party_test"] },
+                    "type": { "type": "string", "enum": ["lab_report", "product_spec", "certification", "third_party_test", "quality_cert"] },
                     "ref": { "type": "string", "minLength": 1 }
                   },
                   "required": ["ref"]

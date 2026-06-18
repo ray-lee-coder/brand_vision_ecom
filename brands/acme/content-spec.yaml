@@ -1,0 +1,27 @@
+content:
+  default_language: zh-CN
+  tone_source: brand-core.voice
+
+  message_hierarchy:
+    primary_benefit: "清爽每一天"
+    secondary_benefits:
+      - "自然原料"
+      - "维他命加持"
+      - "0卡轻负担"
+
+  copy_rules:
+    headline:
+      style: vivid
+      avoid_question: false
+
+  claim_rules:
+    require_source_for:
+      - sugar_content
+      - vitamin_content
+      - calorie_count
+      - ingredient_origin
+    forbidden:
+      - "包治百病"
+      - "长生不老"
+      - "绝对无副作用"
+      - "取代正餐"

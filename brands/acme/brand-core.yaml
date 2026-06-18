@@ -1,0 +1,70 @@
+brand:
+  name: Acme Beverages
+  category: food-beverage
+  positioning: refreshing craft beverages for everyday vitality
+
+identity:
+  keywords:
+    - vibrant
+    - refreshing
+    - bold
+    - natural
+  avoid:
+    - pretentious luxury
+    - overly technical jargon
+    - corporate stiffness
+    - dull tones
+
+colors:
+  primary: "#E85D2C"
+  secondary: "#FBCA3E"
+  accent: "#2A9D8F"
+  background: "#FFF8F0"
+  forbidden:
+    - "#000000"
+    - "#808080"
+
+typography:
+  latin:
+    heading: "Fredoka One"
+    body: "Nunito"
+  chinese:
+    heading: "ZCOOL KuaiLe"
+    body: "Noto Sans SC"
+
+logo:
+  file: assets/logo.svg
+  min_size_px: 40
+  clear_space_px: 20
+  allowed_backgrounds:
+    - light
+    
+  forbidden:
+    - stretch
+    - rotate
+    - grayscale
+    - low_contrast
+
+voice:
+  tone:
+    - energetic
+    - playful
+    - approachable
+  avoid:
+    - robotic corporate speak
+    - aggressive hard selling
+    - humorless statements
+    - overused health buzzwords
+
+claims:
+  require_evidence:
+    - "natural"
+    - "organic"
+    - "no sugar"
+    - "vitamin enriched"
+
+references:
+  approved_visuals:
+    - assets/reference/kv-01.png
+  approved_copy:
+    - "Taste the sunshine."

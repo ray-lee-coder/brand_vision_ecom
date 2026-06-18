@@ -130,13 +130,41 @@ def render_html(resolved, output_dir, message_plan, allow_placeholder=False, use
             html = html.replace("{background_style}", "background: var(--brand-background);")
             html = html.replace("{background_content}", "")
 
+        # Build feature items from product facts (not hardcoded)
+        feature_facts = product_facts.get("facts", {})
+        feature_items_html = ""
+        for fact_key in list(feature_facts.keys())[:4]:
+            fact_data = feature_facts[fact_key]
+            raw_value = fact_data.get("value", "")
+            unit = fact_data.get("unit", "")
+            fact_value = f"{raw_value}{unit}" if unit else str(raw_value)
+            # Use fact label if provided, otherwise derive display label from fact key
+            fact_label = fact_data.get("label", fact_key.replace("_", " ").title())
+            feature_items_html += (
+                f'      <div class="feature-item">\n'
+                f'        <div class="feature-value">{fact_value}</div>\n'
+                f'        <div class="feature-label">{fact_label}</div>\n'
+                f'      </div>\n'
+            )
+        html = html.replace("{feature_items}", feature_items_html)
+
+        # Resolve badge_text from campaign data or message plan
+        badge_text = campaign.get("badge_text", message_plan.get("badge_text", ""))
+        html = html.replace("{badge_text}", badge_text)
+
+        # Derive product_coverage and logo_position from visual_spec layout (not hardcoded)
+        layout = visual_spec.get("layout", {})
+        product_coverage = layout.get("product_coverage", "50%")
+        logo_position = layout.get("logo_position", "top-left")
+
         # Fill brand tokens (foreground)
         fills = {
             "{primary}": primary, "{secondary}": secondary,
             "{accent}": accent, "{background}": background,
             "{heading_font}": heading_font, "{body_font}": body_font,
             "{safe_margin}": str(safe_margin),
-            "{product_coverage}": "50%", "{logo_position}": "top-left",
+            "{product_coverage}": product_coverage,
+            "{logo_position}": logo_position,
             "{brand_name}": brand_name,
             "{headline}": headline, "{subtitle}": subtitle,
             "{width}": str(width), "{height}": str(height),
