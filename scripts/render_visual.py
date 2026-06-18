@@ -273,8 +273,9 @@ def main():
                 print(f"[FAIL] PNG render: {e}")
                 sys.exit(1)
 
-    # Write visual provenance
-    provenance_path = output_dir / ".visual-provenance.json"
+    # Write visual provenance inside campaign-specific output dir
+    campaign_name = resolved.get("campaign", {}).get("name", "default")
+    provenance_path = output_dir / campaign_name / ".visual-provenance.json"
     with open(provenance_path, "w") as f:
         json.dump({
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -283,6 +284,34 @@ def main():
             "outputs": [r["provenance"] for r in rendered],
         }, f, indent=2, ensure_ascii=False)
     print(f"[OK] Visual provenance → {provenance_path}")
+
+    # Append rendered artifacts to manifest
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            manifest = {}
+        if "artifacts" not in manifest:
+            manifest["artifacts"] = {}
+        for r in rendered:
+            artifact_path = Path(r["html_file"]).resolve()
+            if artifact_path.exists():
+                rel = str(artifact_path.relative_to(Path.cwd().resolve()))
+                manifest["artifacts"][rel] = {
+                    "sha256": hashlib.md5(artifact_path.read_bytes()).hexdigest(),
+                    "category": "visual",
+                }
+            if r.get("png_rendered"):
+                png_path = artifact_path.with_suffix(".png")
+                if png_path.exists():
+                    png_rel = str(png_path.relative_to(Path.cwd().resolve()))
+                    manifest["artifacts"][png_rel] = {
+                        "sha256": hashlib.md5(png_path.read_bytes()).hexdigest(),
+                        "category": "visual",
+                    }
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        print(f"[OK] Manifest updated: {len([r for r in rendered])} visual artifact(s)")
     print(f"[OK] Visual render: {len(rendered)} output(s) — headline from message-plan")
 
 

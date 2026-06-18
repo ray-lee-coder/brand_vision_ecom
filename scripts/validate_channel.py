@@ -189,6 +189,22 @@ def main():
     verify_dir = Path(args.verify_dir)
     verify_dir.mkdir(parents=True, exist_ok=True)
 
+    # Determine campaign name from output dirs or manifest files
+    campaign_name = ""
+    for d in output_dir.iterdir():
+        if d.is_dir() and not d.name.startswith("."):
+            campaign_name = d.name
+            break
+    # Try to read manifest for richer context
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    manifest = {}
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    campaign_name = manifest.get("campaign", "")
+
     # Group content files by channel from campaign dirs
     md_files = []
     for campaign_dir in output_dir.iterdir():
@@ -308,6 +324,19 @@ def main():
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(f"\n[OK] Channel diff report → {report_path}")
+
+    # Append channel diff report to manifest
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            manifest = {}
+        if "reports" not in manifest:
+            manifest["reports"] = {}
+        manifest["reports"]["channel_diff"] = {"path": str(report_path.resolve().relative_to(Path.cwd().resolve()))}
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        print(f"[OK] Manifest updated with channel diff report")
 
     # Summary
     print(f"\n{'='*50}")

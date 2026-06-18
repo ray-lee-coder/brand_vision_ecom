@@ -30,7 +30,7 @@ class RunContext:
         return self.root / "output"
 
     def manifest_path(self) -> Path:
-        return self.build_dir / "manifest.json"
+        return self.build_dir / f"manifest-{self.campaign_name}.json"
 
 
 def file_sha256(path) -> str:
@@ -119,6 +119,20 @@ def get_or_create_manifest(ctx: RunContext) -> dict:
     builder = ManifestBuilder(ctx)
     builder.write()
     return builder.data
+
+
+def read_manifest(path: Path) -> dict:
+    """Read a manifest JSON file and return its contents.
+    
+    Returns an empty dict if the file doesn't exist or is invalid.
+    Useful for scripts that need to consume the manifest for campaign context.
+    """
+    if path.exists():
+        try:
+            return read_json(path)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
 
 
 def write_canonical_json(data, path):

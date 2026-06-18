@@ -229,11 +229,22 @@ def main():
     verify_dir = Path(args.verify_dir)
     verify_dir.mkdir(parents=True, exist_ok=True)
 
+    # Determine campaign name from resolved task, then enrich from manifest
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+            campaign_name = manifest.get("campaign", "")
+        except (json.JSONDecodeError, OSError):
+            pass
+    if not campaign_name:
+        campaign_name = resolved.get("campaign", {}).get("name", "")
+
     visual_report = {"files": [], "total_passed": 0, "total_failed": 0}
     content_report = {"files": [], "total_passed": 0, "total_failed": 0}
 
     # Verify visual outputs (campaign-specific)
-    campaign_name = resolved.get("campaign", {}).get("name", "")
     if campaign_name:
         target_visual_dir = output_dir / campaign_name / "visual"
         visual_dirs = [target_visual_dir] if target_visual_dir.exists() else []
@@ -298,6 +309,22 @@ def main():
         file_result.get("build_blocked", False)
         for file_result in content_report["files"]
     )
+
+    # Append verification reports to manifest
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            manifest = {}
+        if "reports" not in manifest:
+            manifest["reports"] = {}
+        if visual_report_path.exists():
+            manifest["reports"]["visual"] = {"path": str(visual_report_path.resolve().relative_to(Path.cwd().resolve()))}
+        if content_report_path.exists():
+            manifest["reports"]["content"] = {"path": str(content_report_path.resolve().relative_to(Path.cwd().resolve()))}
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        print(f"[OK] Manifest updated with verification reports")
 
     # Summary
     print(f"\n{'='*50}")

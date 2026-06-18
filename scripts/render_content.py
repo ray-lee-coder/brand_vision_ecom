@@ -7,6 +7,7 @@ FIXES:
 - Falls through to template fallback only with --dry-run
 """
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -228,6 +229,9 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Extract campaign name for manifest path
+    campaign_name = resolved.get("campaign", {}).get("name", "default")
+
     mode = "dry-run fallback" if args.dry_run else "copy generator (LLM)"
     print(f"[INFO] Content mode: {mode}")
     rendered = render_content(resolved, output_dir, message_plan, args.dry_run)
@@ -236,6 +240,36 @@ def main():
     gen_modes = set(r.get("generation_mode", "") for r in rendered)
     print(f"\n[OK] Content render: {len(rendered)} output(s), {total_claims} claim(s)")
     print(f"     Generation mode(s): {', '.join(gen_modes)}")
+
+    # Append rendered artifacts to manifest
+    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            manifest = {}
+        if "artifacts" not in manifest:
+            manifest["artifacts"] = {}
+        for r in rendered:
+            content_path = Path(r["file"]).resolve()
+            if content_path.exists():
+                rel = str(content_path.relative_to(Path.cwd().resolve()))
+                manifest["artifacts"][rel] = {
+                    "sha256": hashlib.md5(content_path.read_bytes()).hexdigest(),
+                    "category": "content",
+                    "content_type": r.get("content_type", ""),
+                }
+            # Also record provenance file
+            prov_path = content_path.with_suffix(".provenance.json")
+            if prov_path.exists():
+                prov_rel = str(prov_path.relative_to(Path.cwd().resolve()))
+                manifest["artifacts"][prov_rel] = {
+                    "sha256": hashlib.md5(prov_path.read_bytes()).hexdigest(),
+                    "category": "content_provenance",
+                    "content_type": r.get("content_type", ""),
+                }
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        print(f"[OK] Manifest updated: {len(rendered)} content artifact(s)")
 
 
 if __name__ == "__main__":

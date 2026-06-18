@@ -10,11 +10,11 @@ Commit labels and file presence do not complete a task. A task is complete only 
 
 | Batch | Current status | Blocking evidence |
 |---|---|---|
-| R1 Truth layer | PARTIAL | `20 passed, 1 xpassed`; CI references a missing campaign; `build-all --offline` test does not require success |
-| R2 Active contracts | FAIL | Production compiler discards schema errors and does not validate five input document types |
-| R3 Run ownership | NOT DONE | `.build/`, `output/`, reports, and manifest remain shared mutable paths |
-| R4 Trust boundary | FAIL | Zero artifacts/missing provenance pass; channel rules and visual facts remain hardcoded |
-| R5 Product evidence | NOT STARTED | No second brand or non-author acceptance evidence |
+| R1 Truth layer | PARTIAL | `23 passed, 1 xfailed`; missing-provenance behavior remains an expected failure rather than a closed regression |
+| R2 Active contracts | PARTIAL | Six active documents are schema-checked, but overrides still apply to every target and evidence files remain dummy text |
+| R3 Run ownership | PARTIAL | Manifest is written, but shared `.build/`/`output/` paths remain and render/verify/validate do not consume it |
+| R4 Trust boundary | PARTIAL | Visual template claims improved, but channel rules remain hardcoded; validation reports failures and exits zero because it sums a nonexistent `file_results` field |
+| R5 Product evidence | PARTIAL | Acme fixture exists, but five modification trials, evidence report, and non-author acceptance are absent |
 
 Mandatory gates after each batch:
 

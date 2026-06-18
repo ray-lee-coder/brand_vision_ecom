@@ -119,4 +119,16 @@ bash scripts/brandkit build-all --offline
 
 R3 and later must also run a clean-clone smoke test and the ordered/concurrent isolation suite. R5 must run in the macOS 14 and Ubuntu 24.04 CI matrix.
 
+### Progress Recheck 2026-06-18 (`7dd02c7`)
+
+| Batch | Verified status | Fresh evidence |
+|---|---|---|
+| R1 | PARTIAL | `23 passed, 1 xfailed`; the strict missing-provenance regression still fails as expected |
+| R2 | PARTIAL | Active six-document schema checks exist; override targeting and evidence authenticity remain open |
+| R3 | PARTIAL | `.build/manifest.json` contains only compiled JSON; downstream stages ignore it and shared paths remain |
+| R4 | PARTIAL | Channel validator reports four failed dimensions but returns zero; hardcoded channel profiles and provider examples remain |
+| R5 | PARTIAL | Acme adds a second fixture, not the required evidence report, five modification trials, or non-author acceptance |
+
+Decision: continue R3 now. It is Beta correctness work, not production hardening. Do not start the R3 refactor under the assumption that it is the only remaining gap; after R3, close the explicit R1/R2/R4 gates before beginning real R5 acceptance.
+
 Production tenancy, hosted services, databases, queues, authentication, and collaboration remain correctly deferred. None of those should be started to compensate for the unresolved local Beta failures above.
