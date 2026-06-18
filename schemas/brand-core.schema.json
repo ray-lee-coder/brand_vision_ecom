@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Brand Core Schema v1",
+  "description": "Brand identity: colors, typography, logo, voice, claims boundaries",
+  "type": "object",
+  "properties": {
+    "brand": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "positioning": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "colors": {
+      "type": "object",
+      "properties": {
+        "primary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "secondary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "accent": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "background": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "forbidden": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        }
+      },
+      "required": ["primary", "background"]
+    },
+    "typography": {
+      "type": "object",
+      "properties": {
+        "latin": {
+          "type": "object",
+          "properties": {
+            "heading": { "type": "string" },
+            "body": { "type": "string" }
+          },
+          "required": ["heading", "body"]
+        }
+      }
+    },
+    "logo": {
+      "type": "object",
+      "properties": {
+        "min_size_px": { "type": "integer", "minimum": 1 },
+        "clear_space_px": { "type": "integer", "minimum": 0 },
+        "allowed_backgrounds": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["light", "dark"] }
+        },
+        "forbidden": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "tone": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "properties": {
+        "require_evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["brand", "colors"],
+  "additionalProperties": false
+}

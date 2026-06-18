@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product Facts Schema v1",
+  "description": "Product facts with source references and evidence",
+  "type": "object",
+  "properties": {
+    "product": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "facts": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z_]+$": {
+              "type": "object",
+              "properties": {
+                "value": { "type": ["number", "string"] },
+                "unit": { "type": "string" },
+                "conditions": { "type": "string" },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["lab_report", "product_spec", "certification", "third_party_test"] },
+                    "ref": { "type": "string", "minLength": 1 }
+                  },
+                  "required": ["ref"]
+                },
+                "status": { "type": "string", "enum": ["verified", "unverified"] }
+              },
+              "required": ["value", "source"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "assets": {
+          "type": "object",
+          "properties": {
+            "packshot": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "name", "facts"]
+    }
+  },
+  "required": ["product"],
+  "additionalProperties": false
+}

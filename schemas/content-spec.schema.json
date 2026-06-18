@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Content Spec Schema v1",
+  "description": "Brand content execution rules: message hierarchy, copy rules, claim rules",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "object",
+      "properties": {
+        "default_language": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
+        "tone_source": { "type": "string" },
+        "message_hierarchy": {
+          "type": "object",
+          "properties": {
+            "primary_benefit": { "type": "string" },
+            "secondary_benefits": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "copy_rules": {
+          "type": "object",
+          "properties": {
+            "headline": {
+              "type": "object",
+              "properties": {
+                "style": { "type": "string", "enum": ["concise", "descriptive", "question"] },
+                "avoid_question": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "claim_rules": {
+          "type": "object",
+          "properties": {
+            "require_source_for": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "forbidden": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["message_hierarchy"]
+    }
+  },
+  "additionalProperties": false
+}

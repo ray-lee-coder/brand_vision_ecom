@@ -5,13 +5,29 @@ M0-A: Compiler Spine
 
 读取: brand-core / visual-spec / content-spec / product-facts / channels / campaign
 输出: .build/resolved-task.json + .build/message-plan.json
-"""
 
+Beta Stage 2: adds contract validation via contracts.py
+"""
 import json
 import os
 import sys
 from pathlib import Path
 import yaml
+
+
+# ── Schema validation via contracts system ──
+try:
+    from contracts import (
+        validate_document,
+        apply_overrides,
+        require_file,
+        check_output_targets_nonempty,
+        ContractError,
+        SCHEMA_DIR,
+    )
+    HAS_CONTRACTS = SCHEMA_DIR.exists()
+except ImportError:
+    HAS_CONTRACTS = False
 
 
 # ── 约束类型 ──────────────────────────────────────────────
@@ -177,6 +193,14 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     campaign = load_yaml(campaign_path)
     campaign_name = campaign["campaign"]["name"]
 
+    # ── Contract validation (schema, refs, evidence) ──
+    if HAS_CONTRACTS:
+        try:
+            validate_document("campaign", campaign, str(campaign_path))
+        except Exception as e:
+            print(f"[CONTRACT] Campaign schema: {e}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": str(e)}]}
+
     # Resolve brand ref
     brand_ref = campaign["campaign"]["brand_ref"]
     brand_dir_resolved = Path(brand_ref).parent
@@ -189,6 +213,19 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     # Load product facts
     product_ref = campaign["campaign"]["product_ref"]
     product_facts = load_yaml(product_ref)
+
+    # ── Evidence file existence check ──
+    if HAS_CONTRACTS:
+        product_data = product_facts.get("product", {})
+        for fact_key, fact_data in product_data.get("facts", {}).items():
+            source = fact_data.get("source", {})
+            ev_ref = source.get("ref", "")
+            if ev_ref:
+                try:
+                    require_file(Path.cwd(), ev_ref, f"missing_evidence:{fact_key}")
+                except ContractError as e:
+                    print(f"[CONTRACT] {e}")
+                    return {"status": "failed", "conflicts": [{"type": "missing_evidence", "field": f"facts.{fact_key}", "detail": str(e)}]}
 
     # Load channels
     channels = {}
@@ -218,7 +255,12 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     resolved["product"] = product_facts.get("product", {})
 
     # Layer 3: visual-spec + content-spec (brand_soft)
-    resolved["visual_spec"] = visual_spec.get("visual", {})
+    resolved["visual_spec"] = {
+        "visual": visual_spec.get("visual", {}),
+        "layout": visual_spec.get("layout", {}),
+        "product_image": visual_spec.get("product_image", {}),
+        "scene_policy": visual_spec.get("scene_policy", {}),
+    }
     resolved["content_spec"] = content_spec.get("content", {})
 
     # Layer 4: channels (channel_hard + channel_soft)
@@ -242,7 +284,8 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     if conflicts:
         for c in conflicts:
             if c["severity"] == "error":
-                print(f"[CONFLICT] {c['field']}: '{c['value']}' conflicts with {c['conflict_with']}")
+                detail = c.get("conflict_with", c.get("detail", ""))
+                print(f"[CONFLICT] {c['field']}: '{c['value']}' conflicts with {detail}")
         return {"status": "failed", "conflicts": conflicts}
 
     # ── Build message plan (single source of truth for visual + content) ──
@@ -317,6 +360,22 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
 
     resolved["output_targets"] = output_targets
 
+    # ── Empty output targets check ──
+    if HAS_CONTRACTS:
+        try:
+            check_output_targets_nonempty(output_targets, campaign_name)
+        except ContractError as e:
+            print(f"[CONTRACT] {e}")
+            return {"status": "failed", "conflicts": [{"type": "empty_output_targets", "detail": str(e)}]}
+
+    # ── Apply overrides via contracts system ──
+    if HAS_CONTRACTS and override:
+        try:
+            resolved = apply_overrides(resolved, override)
+        except ContractError as e:
+            print(f"[CONTRACT] {e}")
+            return {"status": "failed", "conflicts": [{"type": "unknown_override", "detail": str(e)}]}
+
     # ── Write outputs ──
     build_dir.mkdir(parents=True, exist_ok=True)
 
@@ -331,6 +390,27 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     print(f"[OK] message-plan.json → {msg_path}")
 
     return {"status": "ok", "resolved": resolved, "message_plan": message_plan}
+
+
+def compile_campaign(campaign_path_str):
+    """
+    Convenience wrapper: compile a campaign from its file path.
+    Infers brand_dir, channels_dir, and build_dir from the file location.
+    Changes working directory to the project root for path resolution.
+    """
+    campaign_file = Path(campaign_path_str).resolve()
+    project_root = campaign_file.parent.parent
+    orig_cwd = os.getcwd()
+    os.chdir(str(project_root))
+    try:
+        return compile_specs(
+            brand_dir=str(project_root / "brands"),
+            campaign_path=str(campaign_file),
+            channels_dir=str(project_root / "channels"),
+            build_dir=project_root / ".build",
+        )
+    finally:
+        os.chdir(orig_cwd)
 
 
 def main():

@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Visual Spec Schema v1",
+  "description": "Brand visual execution rules: layout, photography, scene policy",
+  "type": "object",
+  "properties": {
+    "visual": {
+      "type": "object",
+      "properties": {
+        "default_ratio": { "type": "string", "pattern": "^\\d+:\\d+$" },
+        "rendering_mode": { "type": "string", "enum": ["hybrid", "html_only", "gen_only"] }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "density": { "type": "string", "enum": ["low", "medium", "high"] },
+        "product_coverage": { "type": "string", "pattern": "^\\d+%-\\d+%$" },
+        "headline_max_lines": { "type": "integer", "minimum": 1 },
+        "safe_margin_px": { "type": "integer", "minimum": 0 },
+        "logo_position": { "type": "string", "enum": ["top-left", "top-right", "bottom-left", "bottom-right", "hidden"] }
+      }
+    },
+    "product_image": {
+      "type": "object",
+      "properties": {
+        "source_required": { "type": "boolean" },
+        "preferred_asset_type": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "shadow": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "softness": { "type": "string", "enum": ["low", "medium", "high"] }
+          }
+        },
+        "retouching": {
+          "type": "object",
+          "properties": {
+            "allow": { "type": "array", "items": { "type": "string" } },
+            "forbid": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "scene_policy": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "type": "object",
+          "properties": {
+            "html_dominant": { "type": "boolean" },
+            "regenerate_background": { "type": "boolean" },
+            "preserve_product_asset": { "type": "boolean" },
+            "background_prompt": { "type": "string" }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
