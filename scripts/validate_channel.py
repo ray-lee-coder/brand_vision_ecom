@@ -342,7 +342,7 @@ def main():
     print(f"\n{'='*50}")
     print(f"Cross-channel diffs: {report['diff_summary']['total_diffs']} total")
     print(f"  Passed: {report['diff_summary']['passed']}")
-    print(f"  Failed: {report['diff_summary']['failed']}")
+    print(f"  Informational: {report['diff_summary']['failed']}")
     print(f"{'='*50}")
 
     # Cross-channel diffs are informative, not blocking

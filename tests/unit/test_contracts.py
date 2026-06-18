@@ -295,7 +295,6 @@ def test_zero_artifact_verification_fails():
 
 
 # --- R1: Missing provenance must fail ---
-@pytest.mark.xfail(strict=True, reason="P1: verify exits 0 when provenance file is missing")
 def test_missing_provenance_fails():
     """Verify after removing a provenance file must exit non-zero."""
     import subprocess

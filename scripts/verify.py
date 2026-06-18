@@ -85,7 +85,7 @@ def verify_visual(html_path, resolved, message_plan):
     return results
 
 
-def verify_content(content_path, resolved, message_plan):
+def verify_content(content_path, resolved, message_plan, campaign_name=""):
     """Claim Graph: validate claims JSON + markdown text."""
     brand = resolved.get("brand", {})
     claims_config = brand.get("claims", {})
@@ -160,8 +160,19 @@ def verify_content(content_path, resolved, message_plan):
             else:
                 results["checks"].append({"check": f"unverified claim: '{claim.get('claim', '')[:40]}'", "status": "warn", "detail": f"fact_ref={fact_ref}, source={source_ref}"})
     else:
-        # No provenance at all — warn but don't block (offline mode has no provenance)
-        results["checks"].append({"check": "provenance", "status": "info", "detail": "No provenance file found (expected in offline mode)"})
+        # No provenance at all — check if manifest expects one
+        from run_context import read_manifest
+        m = read_manifest(Path.cwd() / ".build" / f"manifest-{campaign_name}.json")
+        expected_provenance = False
+        if m:
+            expected_provenance = any(
+                "provenance" in p for p in m.get("artifacts", {})
+            )
+        if expected_provenance:
+            results["checks"].append({"check": "provenance", "status": "fail", "detail": "Expected provenance file not found"})
+            results["failed"] += 1
+        else:
+            results["checks"].append({"check": "provenance", "status": "info", "detail": "No provenance file found (expected in offline mode)"})
 
     # Check 3: require_evidence in text — must have matching fact
     for evidence_term in require_evidence:
@@ -285,7 +296,7 @@ def main():
         md_files = [f for f in cd.glob("*.md") if not f.name.startswith("._")]
         for md_file in md_files:
             print(f"\n[VERIFY] Content: {md_file.relative_to(output_dir)}")
-            result = verify_content(md_file, resolved, message_plan)
+            result = verify_content(md_file, resolved, message_plan, campaign_name)
             content_report["files"].append(result)
             content_report["total_passed"] += result.get("passed", 0)
             content_report["total_failed"] += result.get("failed", 0)

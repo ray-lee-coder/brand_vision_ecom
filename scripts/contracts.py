@@ -36,6 +36,16 @@ OVERRIDE_PATHS = frozenset({
     "bullet_max_chars_each",
 })
 
+# Map each override to the target types it applies to
+OVERRIDE_TARGET_MAP = {
+    "headline_max_chars": {"visual", "product_title", "title"},
+    "headline_max_lines": {"visual"},
+    "safe_margin_px": {"visual"},
+    "product_title_max_chars": {"product_title"},
+    "bullet_count": {"bullet_points"},
+    "bullet_max_chars_each": {"bullet_points"},
+}
+
 
 class ContractError(RuntimeError):
     """Structured contract violation with error code."""
@@ -97,13 +107,16 @@ def apply_overrides(resolved, overrides):
     result = dict(resolved)
     result["overrides"] = dict(overrides)
 
-    # Apply known overrides to output targets
+    # Apply known overrides to output targets — field-to-target mapping
     output_targets = result.get("output_targets", [])
     for target in output_targets:
+        target_type = target.get("type") or target.get("scene") or target.get("content_type") or ""
         for key, value in overrides.items():
-            if "constraints" not in target:
-                target["constraints"] = {}
-            target["constraints"][key] = value
+            allowed_targets = OVERRIDE_TARGET_MAP.get(key, set())
+            if not allowed_targets or target_type in allowed_targets:
+                if "constraints" not in target:
+                    target["constraints"] = {}
+                target["constraints"][key] = value
 
     return result
 
