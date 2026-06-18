@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"
 # --- P1-4: Missing Playwright/browser exceptions do not fail (verify.py:47-83) ---
 # Visual verification can exit successfully without running its main assertions.
 
-@pytest.mark.xfail(reason="P1: browser exceptions in verify.py don't increment failures")
 def test_verification_fails_on_browser_error():
     """Browser launch failure must produce a non-zero failure count."""
     from verify import verify_visual
@@ -37,7 +36,6 @@ def test_verification_fails_on_browser_error():
 # --- P1-5: Missing/forged provenance passes (verify.py:121-147) ---
 # Missing provenance passes, and a forged nonexistent fact ID passes.
 
-@pytest.mark.xfail(reason="P1: forged provenance with nonexistent fact ID passes")
 def test_forged_provenance_blocked():
     """Provenance with nonexistent fact_id and evidence must be rejected."""
     from verify import verify_content
@@ -66,7 +64,6 @@ def test_forged_provenance_blocked():
 
 
 # --- P1-9 continued: Missing evidence must block ---
-@pytest.mark.xfail(reason="P1: provenance doesn't validate evidence file existence")
 def test_missing_evidence_blocked():
     """Provenance referencing a nonexistent evidence file must be rejected."""
     from verify import verify_content
@@ -105,7 +102,6 @@ def test_missing_evidence_blocked():
 # --- P1-12: Offline rendering fabricates brand-specific copy (render_content.py:122) ---
 # Offline rendering fabricates generic brand copy for every brand.
 
-@pytest.mark.xfail(reason="P1: offline render fabricates generic copy with repeated tags instead of deterministic facts")
 def test_offline_rendering_uses_facts_not_templates():
     """Offline output must render from product facts, not hardcoded generic templates."""
     from render_content import render_content

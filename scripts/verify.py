@@ -24,7 +24,7 @@ def verify_visual(html_path, resolved, message_plan):
 
     results = {"file": str(html_path), "checks": [], "passed": 0, "failed": 0}
 
-    # Check if visual uses message-plan headline (skip templates without headline slot)
+    # Check if visual uses message-plan headline
     if message_plan:
         visual_msg = message_plan.get("visual", {})
         expected_headline = visual_msg.get("headline", "")
@@ -32,10 +32,11 @@ def verify_visual(html_path, resolved, message_plan):
         if expected_headline:
             with open(html_path) as f:
                 html_content = f.read()
-            # Only verify headline exists if the template has a {headline} slot
-            if "{headline}" not in html_content:
-                # Template doesn't have headline slot (e.g. packshot) — skip
-                results["checks"].append({"check": "headline from message-plan (template has no headline slot)", "status": "info"})
+            # Check by CSS class presence in rendered HTML (template placeholders are replaced)
+            has_headline_class = 'class="headline"' in html_content
+            if not has_headline_class:
+                # Template without headline slot (e.g. packshot) — skip
+                results["checks"].append({"check": "headline from message-plan (no headline slot in template)", "status": "info"})
             elif expected_headline in html_content:
                 results["checks"].append({"check": "headline from message-plan", "status": "pass"})
                 results["passed"] += 1
@@ -79,6 +80,7 @@ def verify_visual(html_path, resolved, message_plan):
             browser.close()
     except Exception as e:
         results["error"] = str(e)
+        results["failed"] += 1
 
     return results
 
@@ -139,10 +141,27 @@ def verify_content(content_path, resolved, message_plan):
             if is_marketing:
                 results["checks"].append({"check": f"marketing claim: '{claim.get('claim', '')[:40]}'", "status": "info", "detail": "No fact_ref (marketing writing)"})
             elif is_verified and has_source:
-                results["checks"].append({"check": f"fact claim: '{claim.get('claim', '')[:40]}'", "status": "pass", "detail": f"fact_ref={fact_ref}"})
-                results["passed"] += 1
+                # Validate fact_ref points to a real product fact
+                fact_id = fact_ref.replace("facts.", "", 1)
+                if fact_id in facts:
+                    # Validate evidence file exists
+                    evidence_path = Path(facts[fact_id].get("source", {}).get("ref", ""))
+                    if evidence_path.exists():
+                        results["checks"].append({"check": f"fact claim: '{claim.get('claim', '')[:40]}'", "status": "pass", "detail": f"fact_ref={fact_ref}"})
+                        results["passed"] += 1
+                    else:
+                        results["checks"].append({"check": f"fact claim: '{claim.get('claim', '')[:40]}'", "status": "fail", "detail": f"Evidence file missing: {evidence_path}"})
+                        results["failed"] += 1
+                        results["build_blocked"] = True
+                else:
+                    results["checks"].append({"check": f"provenance fact_ref: '{fact_ref}'", "status": "fail", "detail": f"Unknown fact_id, not in product facts"})
+                    results["failed"] += 1
+                    results["build_blocked"] = True
             else:
                 results["checks"].append({"check": f"unverified claim: '{claim.get('claim', '')[:40]}'", "status": "warn", "detail": f"fact_ref={fact_ref}, source={source_ref}"})
+    else:
+        # No provenance at all — warn but don't block (offline mode has no provenance)
+        results["checks"].append({"check": "provenance", "status": "info", "detail": "No provenance file found (expected in offline mode)"})
 
     # Check 3: require_evidence in text — must have matching fact
     for evidence_term in require_evidence:
@@ -214,7 +233,13 @@ def main():
     content_report = {"files": [], "total_passed": 0, "total_failed": 0}
 
     # Verify visual outputs (campaign-specific)
-    visual_dirs = list(output_dir.glob("*/visual/"))
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+    if campaign_name:
+        target_visual_dir = output_dir / campaign_name / "visual"
+        visual_dirs = [target_visual_dir] if target_visual_dir.exists() else []
+    else:
+        visual_dirs = list(output_dir.glob("*/visual/"))
+    
     if not visual_dirs:
         # Fallback: check output/ root for html
         html_files = [f for f in output_dir.glob("*.html") if not f.name.startswith("._")]
@@ -235,7 +260,11 @@ def main():
                 print(f"  {icon} {check['check']}: {detail}")
 
     # Verify content outputs (campaign-specific)
-    content_dirs = list(output_dir.glob("*/content/"))
+    if campaign_name:
+        target_content_dir = output_dir / campaign_name / "content"
+        content_dirs = [target_content_dir] if target_content_dir.exists() else []
+    else:
+        content_dirs = list(output_dir.glob("*/content/"))
     if not content_dirs:
         md_files = [f for f in output_dir.glob("*.md") if not f.name.startswith("._")]
         if md_files:

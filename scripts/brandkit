@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# BrandKit CLI — 统一入口 (v0.3.0-alpha)
+# BrandKit CLI — 统一入口 (v0.4.0-beta)
 set -euo pipefail
 
 BRANDKIT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -8,18 +8,47 @@ cd "$BRANDKIT_DIR"
 CMD="${1:-help}"
 shift || true
 
-OFFLINE=""
+OFFLINE=0
 ALLOW_WARNINGS=""
 ALLOW_PLACEHOLDER=""
 
-# Parse global flags
+# Parse global flags — keep args for child commands
+PASSTHROUGH=()
 for arg in "$@"; do
   case "$arg" in
-    --offline) OFFLINE="--dry-run" ; set -- "${@/--offline/}" ;;
-    --allow-warnings) ALLOW_WARNINGS="--allow-warnings" ; set -- "${@/--allow-warnings/}" ;;
-    --allow-placeholder) ALLOW_PLACEHOLDER="--allow-placeholder" ; set -- "${@/--allow-placeholder/}" ;;
+    --offline) OFFLINE=1 ;;
+    --allow-warnings) ALLOW_WARNINGS="--allow-warnings" ; PASSTHROUGH+=("$arg") ;;
+    --allow-placeholder) ALLOW_PLACEHOLDER="--allow-placeholder" ; PASSTHROUGH+=("$arg") ;;
+    *) PASSTHROUGH+=("$arg") ;;
   esac
 done
+set -- "${PASSTHROUGH[@]}"
+
+do_compile() {
+  local campaign="$1"
+  python3 scripts/compile.py "$campaign"
+}
+
+do_render_visual() {
+  local args=()
+  [[ $OFFLINE -eq 1 ]] && args+=(--placeholder)
+  [[ -n "$ALLOW_PLACEHOLDER" ]] && args+=("$ALLOW_PLACEHOLDER")
+  python3 scripts/render_visual.py "${args[@]}"
+}
+
+do_render_content() {
+  local args=()
+  [[ $OFFLINE -eq 1 ]] && args+=(--dry-run)
+  python3 scripts/render_content.py "${args[@]}"
+}
+
+do_verify() {
+  python3 scripts/verify.py $ALLOW_WARNINGS
+}
+
+do_validate() {
+  python3 scripts/validate_channel.py $ALLOW_WARNINGS
+}
 
 case "$CMD" in
   init)
@@ -37,26 +66,16 @@ case "$CMD" in
     CAMPAIGN_NAME="$(basename "$CAMPAIGN" .yaml)"
 
     echo "[BUILD] Compiling specs from: $CAMPAIGN"
-    python3 scripts/compile.py "$CAMPAIGN"
+    do_compile "$CAMPAIGN" || exit $?
 
-    echo "[BUILD] Rendering visual... ($([ -n "$OFFLINE" ] && echo 'placeholder' || echo 'full'))"
-    python3 scripts/render_visual.py $ALLOW_PLACEHOLDER $([ -n "$OFFLINE" ] && echo '--placeholder')
-    VISUAL_EXIT=$?
-    if [ $VISUAL_EXIT -ne 0 ]; then
-      echo "[FAIL] Visual render failed"
-      exit $VISUAL_EXIT
-    fi
+    echo "[BUILD] Rendering visual... ($([ $OFFLINE -eq 1 ] && echo 'placeholder' || echo 'full'))"
+    do_render_visual || exit $?
 
-    echo "[BUILD] Rendering content... ($([ -n "$OFFLINE" ] && echo 'offline' || echo 'full'))"
-    python3 scripts/render_content.py $OFFLINE
-    CONTENT_EXIT=$?
-    if [ $CONTENT_EXIT -ne 0 ]; then
-      echo "[FAIL] Content render failed"
-      exit $CONTENT_EXIT
-    fi
+    echo "[BUILD] Rendering content... ($([ $OFFLINE -eq 1 ] && echo 'offline' || echo 'full'))"
+    do_render_content || exit $?
 
     echo "[BUILD] Verifying..."
-    python3 scripts/verify.py $ALLOW_WARNINGS
+    do_verify
     VERIFY_EXIT=$?
     if [ $VERIFY_EXIT -ne 0 ] && [ -z "$ALLOW_WARNINGS" ]; then
       echo "[FAIL] Verification failed (use --allow-warnings to override)"
@@ -64,7 +83,7 @@ case "$CMD" in
     fi
 
     echo "[BUILD] Validating channels..."
-    python3 scripts/validate_channel.py $ALLOW_WARNINGS
+    do_validate
     VALIDATE_EXIT=$?
     if [ $VALIDATE_EXIT -ne 0 ] && [ -z "$ALLOW_WARNINGS" ]; then
       echo "[FAIL] Channel validation failed (use --allow-warnings to override)"
@@ -76,38 +95,39 @@ case "$CMD" in
     ;;
 
   build-all)
-    echo "[BUILD-ALL] Building all campaigns... (real gen mode)"
+    total_status=0
     for f in campaigns/*.yaml; do
       echo ""
       echo "=== $(basename "$f") ==="
-      bash "$0" build "$f" $OFFLINE $ALLOW_WARNINGS $ALLOW_PLACEHOLDER || echo "[WARN] Build failed for $f"
+      bash "$0" build "$f" $( [[ $OFFLINE -eq 1 ]] && echo '--offline' ) $ALLOW_WARNINGS $ALLOW_PLACEHOLDER || total_status=1
     done
     echo ""
-    echo "[DONE] All campaigns built."
+    if [ $total_status -eq 0 ]; then
+      echo "[DONE] All campaigns built."
+    else
+      echo "[FAIL] Some campaigns failed."
+    fi
+    exit $total_status
     ;;
 
   render)
     SUB="${1:-visual}"
     shift 2>/dev/null || true
     case "$SUB" in
-      visual) python3 scripts/render_visual.py "$@" ;;
-      content) python3 scripts/render_content.py "$@" ;;
+      visual) do_render_visual "$@" ;;
+      content) do_render_content "$@" ;;
       ab) python3 scripts/ab_generator.py "$@" ;;
       *) echo "Usage: brandkit render <visual|content|ab> [options]" ;;
     esac
     ;;
 
-  verify)
-    python3 scripts/verify.py "$@"
-    ;;
-
-  validate)
-    python3 scripts/validate_channel.py "$@"
-    ;;
+  verify) do_verify ;;
+  validate) do_validate ;;
 
   baseline)
     CAMPAIGN="${1:-campaigns/618-launch.yaml}"
     echo "[BASELINE] Running pure-prompt baseline for: $CAMPAIGN"
+    shift 2>/dev/null || true
     python3 scripts/run_baseline.py "$CAMPAIGN" --dry-run "$@"
     ;;
 
@@ -122,19 +142,19 @@ case "$CMD" in
     ;;
 
   help|*)
-    echo "BrandKit v0.3.0-alpha — 品牌约束视觉与内容编译器"
+    echo "BrandKit v0.4.0-beta — 品牌约束视觉与内容编译器"
     echo ""
     echo "Usage:"
-    echo "  brandkit build [campaign]         Build campaign (default: real gen)"
+    echo "  brandkit build [campaign]         Build campaign"
     echo "    --offline                       Use template fallback instead of LLM"
     echo "    --allow-warnings                Don't fail on validation warnings"
     echo "    --allow-placeholder             Allow placeholder product images"
     echo "  brandkit build-all                 Build all campaigns"
     echo "  brandkit render <visual|content|ab>"
-    echo "  brandkit verify [--allow-warnings]"
-    echo "  brandkit validate [--allow-warnings]"
+    echo "  brandkit verify"
+    echo "  brandkit validate"
     echo "  brandkit baseline [campaign]       Pure-prompt baseline comparison"
-    echo "  brandkit clean                     Clean build/ and output/"
+    echo "  brandkit clean                     Clean .build/ and output/"
     echo ""
     echo "Default mode (no flags): real LLM gen, all verification blocks on failure."
     echo "Use --offline for dev/testing without API calls."

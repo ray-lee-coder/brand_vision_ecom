@@ -139,8 +139,15 @@ class TestClaimRequiresFactRef(unittest.TestCase):
         prov.write_text(json.dumps({
             "claims": [{"claim": "42dB", "fact_ref": "facts.test_fact", "source_ref": "doc.pdf", "status": "verified"}]
         }))
-        result = verify_content(tmp, resolved, {})
-        self.assertEqual(result["failed"], 0, "Claim with fact_ref should pass")
+        # Create dummy evidence file for the provenance check (relative to CWD = repo root)
+        evidence_path = Path("doc.pdf")
+        evidence_path.write_text("dummy evidence")
+        try:
+            result = verify_content(tmp, resolved, {})
+            self.assertEqual(result["failed"], 0, "Claim with fact_ref should pass")
+        finally:
+            if evidence_path.exists():
+                evidence_path.unlink()
         tmp.unlink()
         prov.unlink()
 

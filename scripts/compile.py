@@ -15,6 +15,14 @@ from pathlib import Path
 import yaml
 
 
+# ── Run Context ──
+try:
+    from run_context import RunContext, ManifestBuilder, create_run_context
+    HAS_RUN_CONTEXT = True
+except ImportError:
+    HAS_RUN_CONTEXT = False
+
+
 # ── Schema validation via contracts system ──
 try:
     from contracts import (
@@ -388,6 +396,22 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     with open(msg_path, "w") as f:
         json.dump(message_plan, f, indent=2, ensure_ascii=False)
     print(f"[OK] message-plan.json → {msg_path}")
+
+    # ── Build manifest ──
+    if HAS_RUN_CONTEXT:
+        try:
+            ctx = create_run_context(campaign_name, Path.cwd())
+            builder = ManifestBuilder(ctx)
+            builder.add_input("campaign", str(campaign_path))
+            builder.add_input("brand_core", brand_ref)
+            builder.add_input("product_facts", product_ref)
+            for target in output_targets:
+                builder.add_target(target)
+            builder.add_artifact(resolved_path, "compiled")
+            builder.add_artifact(msg_path, "compiled")
+            builder.write()
+        except Exception as e:
+            print(f"[WARN] Manifest not written: {e}")
 
     return {"status": "ok", "resolved": resolved, "message_plan": message_plan}
 

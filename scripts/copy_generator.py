@@ -15,6 +15,15 @@ from pathlib import Path
 
 
 # ── Available LLM providers ────────────────────────────────
+class ProviderError(RuntimeError):
+    """Raised when an external provider returns an error or malformed response."""
+    def __init__(self, provider: str, code: str, detail: str):
+        self.provider = provider
+        self.code = code
+        self.detail = detail
+        super().__init__(f"[{provider}] {code}: {detail}")
+
+
 PROVIDERS = {
     "sensenova": {
         "base_url": "https://token.sensenova.cn/v1",
@@ -160,15 +169,30 @@ def generate_copy(message_plan, facts, claim_rules, channel_constraints, content
             import re
             match = re.search(r'```(?:json)?\s*\n(.*?)\n```', response, re.DOTALL)
             if match:
-                result = json.loads(match.group(1))
+                try:
+                    result = json.loads(match.group(1))
+                except json.JSONDecodeError:
+                    raise ProviderError(
+                        provider=provider,
+                        code="MALFORMED_RESPONSE",
+                        detail=f"LLM returned non-JSON response (extracted from code block but still invalid): {response[:500]}"
+                    )
             else:
-                # Fallback: wrap as simple text
-                result = {"text": response.strip(), "claims": []}
+                raise ProviderError(
+                    provider=provider,
+                    code="MALFORMED_RESPONSE",
+                    detail=f"LLM returned non-JSON response with no parseable JSON: {response[:500]}"
+                )
 
         return result
+    except ProviderError:
+        raise
     except Exception as e:
-        print(f"[WARN] Copy generator failed: {e}")
-        return {"text": "", "claims": [], "error": str(e)}
+        raise ProviderError(
+            provider=provider,
+            code="GENERATION_FAILED",
+            detail=str(e)
+        )
 
 
 def main():

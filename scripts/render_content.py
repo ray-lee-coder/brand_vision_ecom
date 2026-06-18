@@ -121,16 +121,19 @@ def render_content(resolved, output_dir, message_plan, dry_run=False):
 
             elif content_type == "note":
                 facts_text = "、".join([f"{k.replace('_', ' ')}" for k in facts.keys()])
+                # Brand-neutral note template — no hardcoded Aether/audio content
+                secondary = secondary_benefits[0] if secondary_benefits else "卓越体验"
+                benefit_lines = []
+                for i, sb in enumerate(secondary_benefits[:3]):
+                    benefit_lines.append(f"• {sb}")
+                while len(benefit_lines) < 3:
+                    benefit_lines.append(f"• {primary_benefit}，{secondary}")
                 text = (
-                    f"通勤路上终于找到了我的降噪搭子✨\n\n"
-                    f"{primary_benefit}，{secondary_benefits[0] if secondary_benefits else '舒适佩戴'}。\n\n"
-                    f"用了两周最深的感受是：\n"
-                    f"• 地铁上开降噪，世界瞬间安静\n"
-                    f"• {secondary_benefits[1] if len(secondary_benefits) > 1 else '佩戴一整天也不累'}\n"
-                    f"• {secondary_benefits[2] if len(secondary_benefits) > 2 else '连接稳定不断连'}\n\n"
-                    f"参数党看这里：{facts_text}\n\n"
-                    f"618活动入手性价比超高，通勤党可以冲。\n\n"
-                    f"#降噪耳机 #通勤好物 #Aether"
+                    f"{primary_benefit}，{secondary}。\n\n"
+                    f"核心亮点：\n"
+                    f"{chr(10).join(benefit_lines)}\n\n"
+                    f"参数：{facts_text}\n\n"
+                    f"#{primary_benefit.replace(' ', '')}"
                 )
                 for fact_key, fact_data in facts.items():
                     claims.append({
@@ -141,7 +144,7 @@ def render_content(resolved, output_dir, message_plan, dry_run=False):
                     })
 
             elif content_type == "title":
-                title = f"{primary_benefit}的通勤神器"
+                title = f"{primary_benefit} | {product_name}"
                 title_max = constraints.get("note_title", {}).get("max_chars", 20)
                 if len(title) > title_max:
                     title = title[:title_max-3] + "..."

@@ -19,6 +19,15 @@ import requests
 from pathlib import Path
 
 
+class ProviderError(RuntimeError):
+    """Raised when an external provider returns an error or malformed response."""
+    def __init__(self, provider: str, code: str, detail: str):
+        self.provider = provider
+        self.code = code
+        self.detail = detail
+        super().__init__(f"[{provider}] {code}: {detail}")
+
+
 # ── SenseNova U1-Fast Configuration ──
 U1_FAST_URL = "https://token.sensenova.cn/v1/images/generations"
 U1_FAST_MODEL = "sensenova-u1-fast"
@@ -128,7 +137,14 @@ def generate_background(scene_name, brand_colors, product_name, scene_desc="",
 
     api_key = os.environ.get("SENSENOVA_API_KEY") or os.environ.get("CUSTOM_API_KEY")
 
-    if not use_placeholder and api_key:
+    if not use_placeholder:
+        # Online mode: API is required
+        if not api_key:
+            raise ProviderError(
+                provider="sensenova",
+                code="NO_CREDENTIALS",
+                detail="SENSENOVA_API_KEY or CUSTOM_API_KEY not set. Use --placeholder for offline SVG mode."
+            )
         try:
             print(f"  [BG] Calling U1-Fast for '{scene_name}'...")
             png_bytes = call_u1_fast(prompt, api_key)
@@ -138,8 +154,11 @@ def generate_background(scene_name, brand_colors, product_name, scene_desc="",
             print(f"  [BG] U1-Fast OK → {file_path} ({len(png_bytes)} bytes)")
             bg_type = "u1_fast"
         except Exception as e:
-            print(f"  [BG] U1-Fast failed: {e}, falling back to SVG placeholder")
-            bg_type = "generated_svg_placeholder"
+            raise ProviderError(
+                provider="sensenova",
+                code="API_FAILURE",
+                detail=f"U1-Fast image generation failed: {e}"
+            )
 
     if bg_type != "u1_fast":
         # SVG placeholder fallback

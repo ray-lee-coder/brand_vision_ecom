@@ -18,7 +18,6 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 # --offline is translated to --dry-run which the nested CLI doesn't understand.
 # Child failures are swallowed.
 
-@pytest.mark.xfail(reason="P1: build-all --offline forwards wrong flag; child failures swallowed")
 def test_build_all_offline_no_api_calls():
     """build-all --offline must never make API calls (no credential = no network)."""
     result = subprocess.run(
@@ -33,7 +32,6 @@ def test_build_all_offline_no_api_calls():
     assert "token" not in stdout_lower or "sensenova" not in stdout_lower
 
 
-@pytest.mark.xfail(reason="P1: build-all child failures swallowed (brandkit:78-86)")
 def test_build_all_returns_nonzero_on_child_fail():
     """build-all must return non-zero when any child campaign fails."""
     # Inject a broken campaign YAML temporarily
