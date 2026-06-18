@@ -2,14 +2,25 @@
 """
 BrandKit Channel Validator — 天猫 vs 小红书结构化差异报告
 M1: 验证渠道差异化不是"感觉不一样"，而是可检查的结构差异
+
+Channel rules are consumed from .build/resolved-task.json channels section
+(compiled from channels/*.yaml) — no hardcoded profiles.
 """
 
 import json
 import re
 from pathlib import Path
 
+from run_context import manifest_artifact_paths, read_manifest
 
-CHANNEL_PROFILES = {
+
+def format_diff_icon(matches_expectation):
+    return "✅" if matches_expectation else "ℹ"
+
+
+# ── Fallback profiles (secondary, only when compiled config is unavailable) ──
+# The real source of truth is resolved-task.json → channels section.
+FALLBACK_CHANNEL_PROFILES = {
     "tmall": {
         "signals": {
             "参数优先": ["参数", "dB", "小时", "g", "IPX", "蓝牙", "续航"],
@@ -33,6 +44,74 @@ CHANNEL_PROFILES = {
 }
 
 
+def derive_rules_from_config(channel_id, channel_config):
+    """Convert compiled channel config (from resolved-task.json channels section
+    or channels/*.yaml) to validation signal rules.
+
+    Maps 'style', 'allowed', and 'avoid' fields to keyword-based signals.
+    """
+    content_cfg = channel_config.get("content", {})
+    style = content_cfg.get("style", "")
+    allowed = content_cfg.get("allowed", [])
+    avoid = content_cfg.get("avoid", [])
+
+    signals = {}
+
+    # Derive signals from 'allowed' field
+    if "parameter" in allowed or "benefit" in allowed:
+        signals["参数优先"] = ["参数", "dB", "小时", "g", "IPX", "蓝牙", "续航"]
+        signals["利益点靠前"] = ["降噪", "续航", "舒适", "连接"]
+    if "promotion" in allowed:
+        signals["CTA明确"] = ["立即", "了解", "购买", "查看"]
+
+    if "first_person" in allowed:
+        signals["第一人称"] = ["我", "我的", "我们"]
+    if "usage_scene" in allowed:
+        signals["场景体验开篇"] = ["通勤", "路上", "用了", "体验", "感受"]
+    if "soft_recommendation" in allowed:
+        signals["软推荐非硬销"] = ["可以", "推荐", "适合", "试试"]
+
+    if "first_person" not in allowed:
+        signals["非第一人称"] = []
+
+    # Derive avoid patterns from 'avoid' field
+    avoid_patterns = list(avoid)
+    # Map style to avoid patterns
+    if style == "direct_conversion":
+        if "第一人称" not in avoid_patterns:
+            avoid_patterns.append("第一人称")
+    elif style == "experience_story":
+        if "硬促销" not in avoid_patterns:
+            avoid_patterns.append("硬促销")
+        if "参数堆砌" not in avoid_patterns:
+            avoid_patterns.append("参数堆砌")
+
+    return {
+        "signals": signals,
+        "avoid": avoid_patterns,
+    }
+
+
+def load_channel_configs(resolved_path):
+    """Load channel configs from resolved-task.json channels section.
+
+    Returns a dict mapping channel_id → channel_config, or empty dict if
+    unavailable.
+    """
+    resolved_path = Path(resolved_path)
+    if not resolved_path.exists():
+        return {}
+
+    try:
+        with open(resolved_path) as f:
+            resolved = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    channels = resolved.get("channels", {})
+    return channels
+
+
 def extract_features(text):
     """Extract structural features from content text."""
     features = {
@@ -53,12 +132,32 @@ def extract_features(text):
     return features
 
 
-def validate_channel(content_path, channel_name):
-    """Validate a single content file against channel profile."""
+def validate_channel(
+    content_path,
+    channel_name,
+    channel_rules=None,
+    channel_contract=None,
+    content_type=None,
+):
+    """Validate a single content file against channel profile.
+
+    Args:
+        content_path: Path to the content file.
+        channel_name: Channel identifier (e.g. 'tmall', 'xiaohongshu').
+        channel_rules: Optional dict with 'signals' and 'avoid' keys,
+                       derived from compiled channel config. If None,
+                       falls back to FALLBACK_CHANNEL_PROFILES.
+    """
     with open(content_path, "r") as f:
         text = f.read()
 
-    profile = CHANNEL_PROFILES.get(channel_name, {})
+    if channel_contract is not None:
+        profile = derive_rules_from_config(channel_name, channel_contract)
+    elif channel_rules is None:
+        profile = FALLBACK_CHANNEL_PROFILES.get(channel_name, {})
+    else:
+        profile = channel_rules
+
     signals = profile.get("signals", {})
     avoid = profile.get("avoid", [])
 
@@ -73,6 +172,17 @@ def validate_channel(content_path, channel_name):
         "failed": 0,
         "warnings": 0,
     }
+
+    content_contract = (channel_contract or {}).get("content", {}).get(content_type or "", {})
+    max_chars = content_contract.get("max_chars")
+    if max_chars is not None:
+        passed = len(text.strip()) <= max_chars
+        results["signal_checks"].append({
+            "check": "max_chars",
+            "status": "pass" if passed else "fail",
+            "detail": f"length={len(text.strip())}, max={max_chars}",
+        })
+        results["passed" if passed else "failed"] += 1
 
     # Check signals
     for signal_name, keywords in signals.items():
@@ -183,36 +293,45 @@ def main():
     parser.add_argument("--allow-warnings", action="store_true", help="Don't fail on warnings")
     parser.add_argument("--output-dir", default="output", help="Output directory")
     parser.add_argument("--verify-dir", default=".build/verify", help="Verify report directory")
+    parser.add_argument("--resolved", default=".build/resolved-task.json", help="Resolved task JSON (source of truth for channel rules)")
+    parser.add_argument("--manifest", help="Explicit run manifest path")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
     verify_dir = Path(args.verify_dir)
-    verify_dir.mkdir(parents=True, exist_ok=True)
 
-    # Determine campaign name from output dirs or manifest files
-    campaign_name = ""
-    for d in output_dir.iterdir():
-        if d.is_dir() and not d.name.startswith("."):
-            campaign_name = d.name
-            break
-    # Try to read manifest for richer context
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
-    manifest = {}
-    if manifest_path.exists():
-        try:
-            manifest = json.loads(manifest_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
+    manifest_path = Path(args.manifest) if args.manifest else Path(".build/manifest.json")
+    manifest = read_manifest(manifest_path)
     campaign_name = manifest.get("campaign", "")
 
-    # Group content files by channel from campaign dirs
-    md_files = []
-    for campaign_dir in output_dir.iterdir():
-        if not campaign_dir.is_dir() or campaign_dir.name.startswith("."):
-            continue
-        content_dir = campaign_dir / "content"
+    # Campaign-scope verify dir
+    if campaign_name and str(verify_dir) == ".build/verify":
+        scoped_verify = Path(f".build/{campaign_name}/verify")
+        verify_dir = scoped_verify
+    verify_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load channel configs from resolved-task.json (compiled channel YAML)
+    # Try campaign-scoped path first
+    resolved_path = Path(args.resolved)
+    if not resolved_path.exists() and campaign_name:
+        scoped_resolved = Path(f".build/{campaign_name}/resolved-task.json")
+        if scoped_resolved.exists():
+            resolved_path = scoped_resolved
+    channel_configs = load_channel_configs(resolved_path)
+    channel_rules_cache = {}
+    for ch_id, ch_config in channel_configs.items():
+        channel_rules_cache[ch_id] = derive_rules_from_config(ch_id, ch_config)
+
+    # Manifest-declared content is authoritative for a run.
+    md_files = manifest_artifact_paths(manifest, Path.cwd(), category="content") if manifest else []
+    if not md_files and campaign_name:
+        content_dir = output_dir / campaign_name / "content"
         if content_dir.exists():
-            md_files.extend(f for f in content_dir.glob("*.md") if not f.name.startswith("._"))
+            md_files = [f for f in content_dir.glob("*.md") if not f.name.startswith("._")]
+    artifact_metadata = {
+        (Path.cwd() / rel).resolve(): metadata
+        for rel, metadata in manifest.get("artifacts", {}).items()
+    }
 
     channel_groups = {}
     for f in md_files:
@@ -229,9 +348,19 @@ def main():
 
     for channel, files in channel_groups.items():
         print(f"\n[CHANNEL VALIDATOR] {channel} ({len(files)} files)")
+        channel_rules = channel_rules_cache.get(channel, None)
+        channel_contract = channel_configs.get(channel)
         channel_results = []
         for f in files:
-            result = validate_channel(f, channel)
+            metadata = artifact_metadata.get(f.resolve(), {})
+            content_type = metadata.get("content_type") or f.stem.split("-", 1)[-1]
+            result = validate_channel(
+                f,
+                channel,
+                channel_rules=channel_rules,
+                channel_contract=channel_contract,
+                content_type=content_type,
+            )
             channel_results.append(result)
             status_icon = "✅" if result["failed"] == 0 else "❌"
             print(f"  {status_icon} {f.name}: {result['passed']} passed, {result['failed']} failed, {result['warnings']} warnings")
@@ -302,7 +431,7 @@ def main():
         ]
 
         for d in overall_diffs:
-            icon = "✅" if d["pass"] else "❌"
+            icon = format_diff_icon(d["pass"])
             print(f"  {icon} {d['dimension']}")
             print(f"     tmall: {d['tmall']}")
             print(f"     xiaohongshu: {d['xiaohongshu']}")
@@ -326,7 +455,6 @@ def main():
     print(f"\n[OK] Channel diff report → {report_path}")
 
     # Append channel diff report to manifest
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text())
@@ -347,7 +475,11 @@ def main():
 
     # Cross-channel diffs are informative, not blocking
     # Only block on individual file validation failures
-    file_failures = sum(f.get("failed", 0) for f in report.get("file_results", []))
+    file_failures = sum(
+        result.get("failed", 0)
+        for channel_results in all_reports.values()
+        for result in channel_results
+    )
     if file_failures > 0 and not args.allow_warnings:
         sys.exit(1)
 

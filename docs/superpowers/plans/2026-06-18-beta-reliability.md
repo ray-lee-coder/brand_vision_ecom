@@ -10,11 +10,11 @@ Commit labels and file presence do not complete a task. A task is complete only 
 
 | Batch | Current status | Blocking evidence |
 |---|---|---|
-| R1 Truth layer | PARTIAL | `23 passed, 1 xfailed`; missing-provenance behavior remains an expected failure rather than a closed regression |
-| R2 Active contracts | PARTIAL | Six active documents are schema-checked, but overrides still apply to every target and evidence files remain dummy text |
-| R3 Run ownership | PARTIAL | Manifest is written, but shared `.build/`/`output/` paths remain and render/verify/validate do not consume it |
-| R4 Trust boundary | PARTIAL | Visual template claims improved, but channel rules remain hardcoded; validation reports failures and exits zero because it sums a nonexistent `file_results` field |
-| R5 Product evidence | PARTIAL | Acme fixture exists, but five modification trials, evidence report, and non-author acceptance are absent |
+| R1 Truth layer | DONE | `39 passed`; single build and `build-all --offline` exit zero |
+| R2 Active contracts | DONE | Six documents enforced; field-to-content-type override tests pass; declared synthetic evidence fixtures require traceability metadata |
+| R3 Run ownership | DONE | Explicit run roots isolate build/output/verify; manifests drive downstream artifact selection; concurrent and missing-artifact tests pass |
+| R4 Trust boundary | DONE | Fact-bound templates, brand-neutral prompts, compiled channel contracts, strict provider response shape, and fail-closed manifest verification are tested |
+| R5 Product evidence | PARTIAL | Five isolated offline modification trials pass with recorded hashes, boundaries, call counts, and timing; completed non-author rubric remains pending |
 
 Mandatory gates after each batch:
 

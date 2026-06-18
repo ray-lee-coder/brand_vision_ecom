@@ -96,9 +96,27 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    with open(args.resolved) as f:
+    # Resolve campaign-scoped paths
+    resolved_path = Path(args.resolved)
+    if not resolved_path.exists():
+        candidate_dirs = [d for d in Path("output").iterdir() if d.is_dir() and not d.name.startswith(".")]
+        if candidate_dirs:
+            camp = candidate_dirs[0].name
+            scoped = Path(f".build/{camp}/resolved-task.json")
+            if scoped.exists():
+                resolved_path = scoped
+
+    with open(resolved_path) as f:
         resolved = json.load(f)
-    with open(args.message_plan) as f:
+
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+
+    msg_path = Path(args.message_plan)
+    if not msg_path.exists() and campaign_name:
+        scoped_msg = Path(f".build/{campaign_name}/message-plan.json")
+        if scoped_msg.exists():
+            msg_path = scoped_msg
+    with open(msg_path) as f:
         message_plan = json.load(f)
 
     facts = resolved.get("product", {}).get("facts", {})

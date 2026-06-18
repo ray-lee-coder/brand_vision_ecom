@@ -8,7 +8,7 @@ product:
       unit: dB
       source:
         type: lab_report
-        ref: docs/buds-noise-test.pdf
+        ref: docs/fixtures/evidence/aether-buds.yaml
       status: verified
     battery:
       value: 8
@@ -16,7 +16,7 @@ product:
       conditions: "single charge, ANC on"
       source:
         type: product_spec
-        ref: docs/buds-spec.pdf
+        ref: docs/fixtures/evidence/aether-buds.yaml
       status: verified
     case_battery:
       value: 32
@@ -24,7 +24,7 @@ product:
       conditions: "with charging case"
       source:
         type: product_spec
-        ref: docs/buds-spec.pdf
+        ref: docs/fixtures/evidence/aether-buds.yaml
       status: verified
     lightweight:
       value: 4.2
@@ -32,7 +32,7 @@ product:
       conditions: "per earbud"
       source:
         type: product_spec
-        ref: docs/buds-spec.pdf
+        ref: docs/fixtures/evidence/aether-buds.yaml
       status: verified
   assets:
     packshot: brands/aether/assets/products/buds/packshot.png

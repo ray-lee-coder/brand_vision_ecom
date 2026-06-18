@@ -12,6 +12,8 @@ import json
 import sys
 from pathlib import Path
 
+from run_context import file_sha256
+
 sys.path.insert(0, str(Path(__file__).parent))
 try:
     from copy_generator import generate_copy
@@ -200,10 +202,20 @@ def main():
     parser.add_argument("--resolved", default=".build/resolved-task.json")
     parser.add_argument("--message-plan", default=".build/message-plan.json")
     parser.add_argument("--output-dir", default="output")
+    parser.add_argument("--manifest", help="Explicit run manifest path")
     parser.add_argument("--dry-run", action="store_true", help="Use template fallback instead of LLM")
     args = parser.parse_args()
 
+    # Resolve campaign-scoped path — try default first, fallback to scoped
     resolved_path = Path(args.resolved)
+    if not resolved_path.exists():
+        candidate_dirs = [d for d in Path("output").iterdir() if d.is_dir() and not d.name.startswith(".")]
+        if candidate_dirs:
+            campaign_name = candidate_dirs[0].name
+            scoped = Path(f".build/{campaign_name}/resolved-task.json")
+            if scoped.exists():
+                resolved_path = scoped
+                args.resolved = str(scoped)
     if not resolved_path.exists():
         print(f"[ERROR] Resolved task not found: {resolved_path}")
         sys.exit(1)
@@ -211,8 +223,15 @@ def main():
     with open(resolved_path) as f:
         resolved = json.load(f)
 
-    # Load message-plan
+    # Determine campaign name from resolved task for scoped paths
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+
+    # Load message-plan — try scoped path
     msg_path = Path(args.message_plan)
+    if not msg_path.exists() and campaign_name:
+        scoped_msg = Path(f".build/{campaign_name}/message-plan.json")
+        if scoped_msg.exists():
+            msg_path = scoped_msg
     message_plan = {}
     if msg_path.exists():
         with open(msg_path) as f:
@@ -242,7 +261,7 @@ def main():
     print(f"     Generation mode(s): {', '.join(gen_modes)}")
 
     # Append rendered artifacts to manifest
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    manifest_path = Path(args.manifest) if args.manifest else Path(f".build/manifest-{campaign_name}.json")
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text())
@@ -255,7 +274,7 @@ def main():
             if content_path.exists():
                 rel = str(content_path.relative_to(Path.cwd().resolve()))
                 manifest["artifacts"][rel] = {
-                    "sha256": hashlib.md5(content_path.read_bytes()).hexdigest(),
+                    "sha256": file_sha256(content_path),
                     "category": "content",
                     "content_type": r.get("content_type", ""),
                 }
@@ -264,7 +283,7 @@ def main():
             if prov_path.exists():
                 prov_rel = str(prov_path.relative_to(Path.cwd().resolve()))
                 manifest["artifacts"][prov_rel] = {
-                    "sha256": hashlib.md5(prov_path.read_bytes()).hexdigest(),
+                    "sha256": file_sha256(prov_path),
                     "category": "content_provenance",
                     "content_type": r.get("content_type", ""),
                 }

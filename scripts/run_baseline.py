@@ -169,8 +169,17 @@ def compare_with_brandkit(baseline_report, brandkit_build_dir):
     }
 
     # BrandKit: compile (0 LLM) + render_visual (0 LLM for HTML, 2 for PNG via Playwright) + render_content (4 LLM calls for copy gen) + verify (0 LLM)
-    # Count from output targets
+    # Count from output targets — try campaign-scoped paths first
     resolved_path = Path(brandkit_build_dir) / "resolved-task.json"
+    if not resolved_path.exists():
+        # Try to find campaign-scoped variant
+        build_parent = Path(brandkit_build_dir).parent
+        for d in build_parent.iterdir():
+            if d.is_dir() and not d.name.startswith("."):
+                candidate = d / "resolved-task.json"
+                if candidate.exists():
+                    resolved_path = candidate
+                    break
     if resolved_path.exists():
         with open(resolved_path) as f:
             resolved = json.load(f)

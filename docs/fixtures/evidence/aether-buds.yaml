@@ -1,0 +1,10 @@
+evidence_type: synthetic_fixture
+issuer: BrandKit beta test fixtures
+issued_at: 2026-06-18
+method: Deterministic fictional product specification used only for compiler and verifier testing.
+license: CC0-1.0
+fact_ids:
+  - facts.noise_reduction
+  - facts.battery
+  - facts.case_battery
+  - facts.lightweight

@@ -110,7 +110,11 @@ def apply_overrides(resolved, overrides):
     # Apply known overrides to output targets — field-to-target mapping
     output_targets = result.get("output_targets", [])
     for target in output_targets:
-        target_type = target.get("type") or target.get("scene") or target.get("content_type") or ""
+        target_type = (
+            target.get("content_type")
+            if target.get("type") == "content"
+            else target.get("type") or target.get("scene") or ""
+        )
         for key, value in overrides.items():
             allowed_targets = OVERRIDE_TARGET_MAP.get(key, set())
             if not allowed_targets or target_type in allowed_targets:
@@ -126,6 +130,19 @@ def require_file(project_root, ref_path, code="missing_evidence"):
     full_path = Path(project_root) / ref_path
     if not full_path.exists():
         raise ContractError(code, f"Required file not found: {ref_path} (resolved: {full_path})")
+    if full_path.suffix in {".yaml", ".yml"}:
+        try:
+            metadata = yaml.safe_load(full_path.read_text()) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            raise ContractError("invalid_evidence_fixture", f"Cannot parse {ref_path}: {exc}")
+        if metadata.get("evidence_type") == "synthetic_fixture":
+            required = ("issuer", "issued_at", "method", "fact_ids")
+            missing = [key for key in required if not metadata.get(key)]
+            if missing:
+                raise ContractError(
+                    "invalid_evidence_fixture",
+                    f"Synthetic evidence {ref_path} is missing metadata: {missing}",
+                )
     return str(full_path)
 
 

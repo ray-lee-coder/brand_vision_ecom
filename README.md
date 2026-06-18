@@ -12,7 +12,7 @@
 | 🔍 | **Every claim has a source** | Product facts with lab reports, spec sheets, certifications. Content provenance shows exactly where each number came from |
 | 🛡️ | **Build blocks on violations** | Forbidden colors, unsupported claims, missing product assets, unknown channels — hard constraints fail the build, not silently degrade |
 | ♻️ | **Local regeneration** | Change background → only background regenerates. Change copy → no image call. Product foreground is **always fixed** |
-| 🧩 | **Campaign-structured output** | `output/{campaign}/visual/`, `output/{campaign}/content/`, `output/{campaign}/verify/` — ready for review and delivery |
+| 🧩 | **Run-isolated output** | Every build prints its `output/runs/{run_id}/{campaign}/` directory and `.build/runs/{run_id}/manifest.json` |
 
 ---
 
@@ -27,7 +27,7 @@
 | **Validation** | Playwright CSS assertions + claim provenance graph |
 | **Channel Validator** | Structural feature extraction (emoji, first-person, parameters, CTA) |
 | **CLI** | Single `brandkit` shell entry point |
-| **Tests** | pytest (9 audit compliance tests) |
+| **Tests** | pytest unit, integration, CLI, and offline end-to-end gates |
 
 ---
 
@@ -54,9 +54,9 @@ python3 -m playwright install chromium
 # Build a campaign — real LLM generation (no --dry-run needed)
 bash scripts/brandkit build campaigns/618-launch.yaml
 
-# Output is in output/{campaign}/
-ls output/618-launch/
-# visual/  content/  verify/
+# The command prints both run-scoped locations:
+# output/runs/{run_id}/618-launch/
+# .build/runs/{run_id}/manifest.json
 
 # For development without API calls:
 bash scripts/brandkit build campaigns/618-launch.yaml --offline
@@ -123,7 +123,7 @@ brandkit build {campaign}.yaml
   ├─ render_content.py → Markdown + provenance (Copーテキスト Generator LLM)
   └─ verify.py → L1 assertions + claim graph + build blocking
   ↓
-output/{campaign}/
+output/runs/{run_id}/{campaign}/
 ```
 
 ---

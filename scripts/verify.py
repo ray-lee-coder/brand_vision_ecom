@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 import re
 
+from run_context import manifest_artifact_paths, read_manifest
+
 
 def verify_visual(html_path, resolved, message_plan):
     """L1 visual assertions via Playwright getComputedStyle."""
@@ -181,7 +183,11 @@ def verify_content(content_path, resolved, message_plan, campaign_name=""):
             evidence_covered = False
             for claim in claims:
                 claim_text = claim.get("claim", "").lower()
-                if evidence_term.lower() in claim_text and claim.get("fact_ref") != "marketing_writing":
+                fact_ref = claim.get("fact_ref", "").lower()
+                if (
+                    evidence_term.lower() in claim_text
+                    or evidence_term.lower() in fact_ref
+                ) and fact_ref != "marketing_writing":
                     evidence_covered = True
                     break
             if evidence_covered:
@@ -220,35 +226,60 @@ def main():
     parser.add_argument("--message-plan", default=".build/message-plan.json")
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--verify-dir", default=".build/verify")
+    parser.add_argument("--manifest", help="Explicit run manifest path")
     parser.add_argument("--allow-warnings", action="store_true", help="Don't fail on warnings")
     args = parser.parse_args()
 
+    # Resolve campaign-scoped paths
     resolved_path = Path(args.resolved)
+    if not resolved_path.exists():
+        candidate_dirs = [d for d in Path("output").iterdir() if d.is_dir() and not d.name.startswith(".")]
+        if candidate_dirs:
+            camp = candidate_dirs[0].name
+            scoped = Path(f".build/{camp}/resolved-task.json")
+            if scoped.exists():
+                resolved_path = scoped
+                args.resolved = str(scoped)
     if not resolved_path.exists():
         print(f"[ERROR] Resolved task not found: {resolved_path}")
         sys.exit(1)
     with open(resolved_path) as f:
         resolved = json.load(f)
 
+    # Determine campaign name for scoped paths
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+
     msg_path = Path(args.message_plan)
+    if not msg_path.exists() and campaign_name:
+        scoped_msg = Path(f".build/{campaign_name}/message-plan.json")
+        if scoped_msg.exists():
+            msg_path = scoped_msg
     message_plan = {}
     if msg_path.exists():
         with open(msg_path) as f:
             message_plan = json.load(f)
 
-    output_dir = Path(args.output_dir)
+    # Campaign-scope verify dir
     verify_dir = Path(args.verify_dir)
+    if campaign_name and str(verify_dir) == ".build/verify":
+        scoped_verify = Path(f".build/{campaign_name}/verify")
+        if scoped_verify.exists() or True:
+            verify_dir = scoped_verify
     verify_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = Path(args.output_dir)
 
     # Determine campaign name from resolved task, then enrich from manifest
     campaign_name = resolved.get("campaign", {}).get("name", "")
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
-    if manifest_path.exists():
-        try:
-            manifest = json.loads(manifest_path.read_text())
-            campaign_name = manifest.get("campaign", "")
-        except (json.JSONDecodeError, OSError):
-            pass
+    manifest_path = Path(args.manifest) if args.manifest else (
+        Path(f".build/{campaign_name}/manifest.json") if campaign_name else Path(".build/manifest.json")
+    )
+    manifest = read_manifest(manifest_path)
+    campaign_name = manifest.get("campaign", campaign_name)
+    declared_artifacts = manifest_artifact_paths(manifest, Path.cwd()) if manifest else []
+    missing_manifest_artifacts = [path for path in declared_artifacts if not path.exists()]
+    for missing in missing_manifest_artifacts:
+        print(f"[FAIL] Manifest artifact missing: {missing}")
     if not campaign_name:
         campaign_name = resolved.get("campaign", {}).get("name", "")
 
@@ -256,7 +287,11 @@ def main():
     content_report = {"files": [], "total_passed": 0, "total_failed": 0}
 
     # Verify visual outputs (campaign-specific)
-    if campaign_name:
+    declared_visuals = manifest_artifact_paths(manifest, Path.cwd(), category="visual") if manifest else []
+    declared_visuals = [path for path in declared_visuals if path.suffix == ".html"]
+    if declared_visuals:
+        visual_dirs = []
+    elif campaign_name:
         target_visual_dir = output_dir / campaign_name / "visual"
         visual_dirs = [target_visual_dir] if target_visual_dir.exists() else []
     else:
@@ -268,10 +303,12 @@ def main():
         if html_files:
             visual_dirs = [output_dir]
     
-    for vd in visual_dirs:
-        html_files = [f for f in vd.glob("*.html") if not f.name.startswith("._")]
+    visual_batches = [(None, declared_visuals)] if declared_visuals else [
+        (vd, [f for f in vd.glob("*.html") if not f.name.startswith("._")]) for vd in visual_dirs
+    ]
+    for vd, html_files in visual_batches:
         for html_file in html_files:
-            print(f"[VERIFY] Visual: {html_file.relative_to(output_dir)}")
+            print(f"[VERIFY] Visual: {html_file.resolve().relative_to(output_dir.resolve())}")
             result = verify_visual(html_file, resolved, message_plan)
             visual_report["files"].append(result)
             visual_report["total_passed"] += result.get("passed", 0)
@@ -282,7 +319,10 @@ def main():
                 print(f"  {icon} {check['check']}: {detail}")
 
     # Verify content outputs (campaign-specific)
-    if campaign_name:
+    declared_content = manifest_artifact_paths(manifest, Path.cwd(), category="content") if manifest else []
+    if declared_content:
+        content_dirs = []
+    elif campaign_name:
         target_content_dir = output_dir / campaign_name / "content"
         content_dirs = [target_content_dir] if target_content_dir.exists() else []
     else:
@@ -292,10 +332,12 @@ def main():
         if md_files:
             content_dirs = [output_dir]
 
-    for cd in content_dirs:
-        md_files = [f for f in cd.glob("*.md") if not f.name.startswith("._")]
+    content_batches = [(None, declared_content)] if declared_content else [
+        (cd, [f for f in cd.glob("*.md") if not f.name.startswith("._")]) for cd in content_dirs
+    ]
+    for cd, md_files in content_batches:
         for md_file in md_files:
-            print(f"\n[VERIFY] Content: {md_file.relative_to(output_dir)}")
+            print(f"\n[VERIFY] Content: {md_file.resolve().relative_to(output_dir.resolve())}")
             result = verify_content(md_file, resolved, message_plan, campaign_name)
             content_report["files"].append(result)
             content_report["total_passed"] += result.get("passed", 0)
@@ -322,7 +364,6 @@ def main():
     )
 
     # Append verification reports to manifest
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text())
@@ -352,7 +393,12 @@ def main():
             sys.exit(1)
     print(f"{'='*50}")
 
-    has_failures = (visual_report["total_failed"] > 0 or content_report["total_failed"] > 0 or build_blocked)
+    has_failures = (
+        visual_report["total_failed"] > 0
+        or content_report["total_failed"] > 0
+        or build_blocked
+        or bool(missing_manifest_artifacts)
+    )
     if has_failures and not args.allow_warnings:
         sys.exit(1)
 

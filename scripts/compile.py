@@ -4,7 +4,7 @@ BrandKit Compiler — Spec 合并 + 冲突检测 + 编译输出
 M0-A: Compiler Spine
 
 读取: brand-core / visual-spec / content-spec / product-facts / channels / campaign
-输出: .build/resolved-task.json + .build/message-plan.json
+输出: caller-selected run build directory containing resolved-task.json + message-plan.json
 
 Beta Stage 2: adds contract validation via contracts.py
 """
@@ -195,7 +195,15 @@ def detect_conflicts(resolved, sources):
     return conflicts
 
 
-def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
+def compile_specs(
+    brand_dir,
+    campaign_path,
+    channels_dir,
+    build_dir,
+    manifest_path=None,
+    run_id=None,
+    mode="offline",
+):
     """Main compile function."""
     # Load campaign
     campaign = load_yaml(campaign_path)
@@ -432,7 +440,7 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
     # ── Build manifest ──
     if HAS_RUN_CONTEXT:
         try:
-            ctx = create_run_context(campaign_name, Path.cwd())
+            ctx = create_run_context(campaign_name, Path.cwd(), mode=mode, run_id=run_id)
             builder = ManifestBuilder(ctx)
             builder.add_input("campaign", str(campaign_path))
             builder.add_input("brand_core", brand_ref)
@@ -441,7 +449,7 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
                 builder.add_target(target)
             builder.add_artifact(resolved_path, "compiled")
             builder.add_artifact(msg_path, "compiled")
-            builder.write()
+            builder.write(manifest_path)
         except Exception as e:
             print(f"[WARN] Manifest not written: {e}")
 
@@ -452,6 +460,7 @@ def compile_campaign(campaign_path_str):
     """
     Convenience wrapper: compile a campaign from its file path.
     Infers brand_dir, channels_dir, and build_dir from the file location.
+    Build directory is campaign-scoped: .build/{campaign_name}/
     Changes working directory to the project root for path resolution.
     """
     campaign_file = Path(campaign_path_str).resolve()
@@ -459,11 +468,14 @@ def compile_campaign(campaign_path_str):
     orig_cwd = os.getcwd()
     os.chdir(str(project_root))
     try:
+        # Load campaign to get name for scoped build_dir
+        campaign = load_yaml(str(campaign_file))
+        campaign_name = campaign["campaign"]["name"]
         return compile_specs(
             brand_dir=str(project_root / "brands"),
             campaign_path=str(campaign_file),
             channels_dir=str(project_root / "channels"),
-            build_dir=project_root / ".build",
+            build_dir=project_root / ".build" / campaign_name,
         )
     finally:
         os.chdir(orig_cwd)
@@ -476,6 +488,9 @@ def main():
     parser.add_argument("--brand-dir", default="brands", help="Brands directory")
     parser.add_argument("--channels-dir", default="channels", help="Channels directory")
     parser.add_argument("--build-dir", default=".build", help="Build output directory")
+    parser.add_argument("--manifest", help="Explicit run manifest path")
+    parser.add_argument("--run-id", help="Explicit run identifier")
+    parser.add_argument("--mode", choices=("offline", "online"), default="offline")
     args = parser.parse_args()
 
     result = compile_specs(
@@ -483,6 +498,9 @@ def main():
         campaign_path=args.campaign,
         channels_dir=args.channels_dir,
         build_dir=Path(args.build_dir),
+        manifest_path=Path(args.manifest) if args.manifest else None,
+        run_id=args.run_id,
+        mode=args.mode,
     )
 
     if result["status"] == "failed":

@@ -69,16 +69,26 @@ def call_u1_fast(prompt: str, api_key: str) -> bytes:
 
 
 def build_background_prompt(scene_name: str, brand_colors: dict, product_name: str,
-                           scene_desc: str = "") -> str:
-    """Build prompt for background image generation."""
+                           scene_desc: str = "",
+                           brand_name: str = "", brand_category: str = "",
+                           brand_keywords=None) -> str:
+    """Build prompt for background image generation.
+
+    Uses brand identity from calling context — no hardcoded styling.
+    """
     primary = brand_colors.get("primary", "#111827")
     accent = brand_colors.get("accent", "#8B7355")
     background = brand_colors.get("background", "#F7F4EF")
 
+    brand_desc = brand_name or "Product"
+    category_desc = brand_category or ""
+    keywords_desc = ", ".join(brand_keywords) if brand_keywords else "clean, minimal"
+
     brand_style = (
-        f"Brand: premium audio, urban professionals. "
+        f"Brand: {brand_desc}"
+        f"{' — ' + category_desc if category_desc else ''}. "
         f"Colors: primary {primary}, accent {accent}, background {background}. "
-        f"Style: minimal, precise, calm. "
+        f"Style: {keywords_desc}. "
         f"No text, no logo, no watermarks. "
         f"Empty scene for product photography compositing."
     )
@@ -86,10 +96,8 @@ def build_background_prompt(scene_name: str, brand_colors: dict, product_name: s
     if not scene_desc:
         scene_prompts = {
             "lifestyle": (
-                "Urban lifestyle background for premium audio product photography. "
-                "Warm ambient lighting, modern city apartment interior, "
-                "soft natural light through window, wooden desk surface. "
-                "Mood: calm, sophisticated, premium. "
+                "Lifestyle setting appropriate for the declared brand and product category. "
+                "Natural lighting, usable negative space, and a surface suitable for product compositing. "
             ),
             "packshot": (
                 "Studio product photography background. "
@@ -114,7 +122,8 @@ def build_background_prompt(scene_name: str, brand_colors: dict, product_name: s
 
 
 def generate_background(scene_name, brand_colors, product_name, scene_desc="",
-                        output_dir=None, use_placeholder=False):
+                        output_dir=None, use_placeholder=False,
+                        brand_name="", brand_category="", brand_keywords=None):
     """
     Generate a background image for a scene.
 
@@ -128,7 +137,9 @@ def generate_background(scene_name, brand_colors, product_name, scene_desc="",
         output_dir = Path(output_dir) / "backgrounds"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    prompt = build_background_prompt(scene_name, brand_colors, product_name, scene_desc)
+    prompt = build_background_prompt(scene_name, brand_colors, product_name, scene_desc,
+                                     brand_name=brand_name, brand_category=brand_category,
+                                     brand_keywords=brand_keywords)
 
     bg_type = "generated_u1fast"
     file_path = None
@@ -217,6 +228,9 @@ def inject_background(html, bg_info):
         # SVG placeholder or solid
         style = "background: var(--brand-background);"
         content = bg_info.get("content", "")
+        background_hash = bg_info.get("hash", "")
+        if background_hash:
+            content = f"<!-- background-hash:{background_hash} -->{content}"
         html = html.replace("{background_style}", style)
         html = html.replace("{background_content}", content)
 
@@ -239,9 +253,14 @@ def main():
     colors = brand.get("colors", {})
     product = resolved.get("product", {})
     product_name = product.get("name", "Product")
+    brand_name = brand.get("name", "")
+    brand_category = brand.get("category", "")
+    brand_keywords = brand.get("identity", {}).get("keywords", [])
 
     bg = generate_background(args.scene, colors, product_name, args.desc,
-                             use_placeholder=args.placeholder)
+                             use_placeholder=args.placeholder,
+                             brand_name=brand_name, brand_category=brand_category,
+                             brand_keywords=brand_keywords)
     print(json.dumps({k: v for k, v in bg.items() if k != "content"}, indent=2, ensure_ascii=False))
 
 

@@ -15,6 +15,8 @@ import hashlib
 import time
 from pathlib import Path
 
+from run_context import file_sha256
+
 sys.path.insert(0, str(Path(__file__).parent))
 try:
     from background_generator import generate_background, inject_background
@@ -59,6 +61,7 @@ def get_scene_policy(visual_spec, scene_name):
         "html_dominant": policy.get("html_dominant", True),
         "regenerate_background": policy.get("regenerate_background", False),
         "preserve_product_asset": policy.get("preserve_product_asset", True),
+        "background_prompt": policy.get("background_prompt", ""),
     }
 
 
@@ -120,9 +123,14 @@ def render_html(resolved, output_dir, message_plan, allow_placeholder=False, use
         bg_info = None
         if policy["regenerate_background"] and HAS_BG_GEN:
             bg_prompt = policy.get("background_prompt", "")
+            brand_name = brand.get("name", "")
+            brand_category = brand.get("category", "")
+            brand_keywords = brand.get("identity", {}).get("keywords", [])
             bg_info = generate_background(
                 scene, colors, product_facts.get("name", brand_name),
                 scene_desc=bg_prompt, use_placeholder=use_placeholder_bg,
+                brand_name=brand_name, brand_category=brand_category,
+                brand_keywords=brand_keywords,
             )
         if bg_info:
             html = inject_background(html, bg_info)
@@ -226,18 +234,35 @@ def render_png(html_path, output_path, width, height):
     return True
 
 
+def resolve_campaign_path(base, campaign_name, filename):
+    """Helper: return campaign-scoped path if it exists, else base path."""
+    scoped = Path(f".build/{campaign_name}/{filename}")
+    return str(scoped) if scoped.exists() else base
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="BrandKit Visual Renderer (v0.3.0)")
     parser.add_argument("--resolved", default=".build/resolved-task.json")
     parser.add_argument("--message-plan", default=".build/message-plan.json")
     parser.add_argument("--output-dir", default="output")
+    parser.add_argument("--manifest", help="Explicit run manifest path")
     parser.add_argument("--skip-png", action="store_true")
     parser.add_argument("--allow-placeholder", action="store_true")
     parser.add_argument("--placeholder", action="store_true", help="Use SVG placeholder backgrounds instead of API")
     args = parser.parse_args()
 
+    # Resolve campaign-scoped paths — try default first, fallback to scoped
     resolved_path = Path(args.resolved)
+    if not resolved_path.exists():
+        # Try to find campaign name from campaign files or content dirs
+        candidate_dirs = [d for d in Path("output").iterdir() if d.is_dir() and not d.name.startswith(".")]
+        if candidate_dirs:
+            campaign_name = candidate_dirs[0].name
+            scoped = Path(f".build/{campaign_name}/resolved-task.json")
+            if scoped.exists():
+                resolved_path = scoped
+                args.resolved = str(scoped)
     if not resolved_path.exists():
         print(f"[ERROR] Resolved task not found: {resolved_path}")
         sys.exit(1)
@@ -245,12 +270,21 @@ def main():
     with open(resolved_path) as f:
         resolved = json.load(f)
 
-    # Load message-plan (single source of truth)
+    # Determine campaign name from resolved task for scoped paths
+    campaign_name = resolved.get("campaign", {}).get("name", "")
+
+    # Load message-plan (single source of truth) — try scoped path
     msg_path = Path(args.message_plan)
+    if not msg_path.exists() and campaign_name:
+        scoped_msg = Path(f".build/{campaign_name}/message-plan.json")
+        if scoped_msg.exists():
+            msg_path = scoped_msg
     message_plan = {}
     if msg_path.exists():
         with open(msg_path) as f:
             message_plan = json.load(f)
+    else:
+        print(f"[WARN] message-plan not found at {msg_path}")
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -286,7 +320,7 @@ def main():
     print(f"[OK] Visual provenance → {provenance_path}")
 
     # Append rendered artifacts to manifest
-    manifest_path = Path(f".build/manifest-{campaign_name}.json")
+    manifest_path = Path(args.manifest) if args.manifest else Path(f".build/manifest-{campaign_name}.json")
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text())
@@ -299,7 +333,7 @@ def main():
             if artifact_path.exists():
                 rel = str(artifact_path.relative_to(Path.cwd().resolve()))
                 manifest["artifacts"][rel] = {
-                    "sha256": hashlib.md5(artifact_path.read_bytes()).hexdigest(),
+                    "sha256": file_sha256(artifact_path),
                     "category": "visual",
                 }
             if r.get("png_rendered"):
@@ -307,7 +341,7 @@ def main():
                 if png_path.exists():
                     png_rel = str(png_path.relative_to(Path.cwd().resolve()))
                     manifest["artifacts"][png_rel] = {
-                        "sha256": hashlib.md5(png_path.read_bytes()).hexdigest(),
+                        "sha256": file_sha256(png_path),
                         "category": "visual",
                     }
         manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))

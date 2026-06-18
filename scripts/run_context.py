@@ -7,10 +7,9 @@ verification. No timestamps in canonical hash inputs.
 """
 import hashlib
 import json
-import shutil
-from dataclasses import dataclass, field, asdict
+import uuid
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -23,14 +22,18 @@ class RunContext:
 
     @property
     def build_dir(self) -> Path:
-        return self.root / ".build"
+        return self.root / ".build" / "runs" / self.run_id / "build"
 
     @property
     def output_dir(self) -> Path:
-        return self.root / "output"
+        return self.root / "output" / "runs" / self.run_id
+
+    @property
+    def verify_dir(self) -> Path:
+        return self.root / ".build" / "runs" / self.run_id / "verify"
 
     def manifest_path(self) -> Path:
-        return self.build_dir / f"manifest-{self.campaign_name}.json"
+        return self.root / ".build" / "runs" / self.run_id / "manifest.json"
 
 
 def file_sha256(path) -> str:
@@ -95,19 +98,16 @@ class ManifestBuilder:
             rel = str(path.relative_to(self.ctx.root))
             self.data["reports"][name] = {"path": rel}
 
-    def write(self):
+    def write(self, path=None):
         """Write manifest to build directory."""
-        path = self.ctx.manifest_path()
+        path = Path(path) if path is not None else self.ctx.manifest_path()
         write_json(path, self.data)
         return path
 
 
-def create_run_context(campaign_name: str, root: Path, mode: str = "offline") -> RunContext:
-    """Create a RunContext with a deterministic run_id for repeatability."""
-    import hashlib
-    # Deterministic run_id: campaign_name + mode hash
-    seed = f"{campaign_name}:{mode}".encode()
-    run_id = hashlib.sha256(seed).hexdigest()[:16]
+def create_run_context(campaign_name: str, root: Path, mode: str = "offline", run_id=None) -> RunContext:
+    """Create a RunContext with a unique or caller-supplied run ID."""
+    run_id = run_id or f"{campaign_name}-{uuid.uuid4().hex[:12]}"
     return RunContext(run_id=run_id, campaign_name=campaign_name, root=root, mode=mode)
 
 
@@ -133,6 +133,22 @@ def read_manifest(path: Path) -> dict:
         except (json.JSONDecodeError, OSError):
             return {}
     return {}
+
+
+def manifest_artifact_paths(manifest: dict, root: Path, category=None):
+    """Resolve declared artifact paths, optionally filtered by category."""
+    root = Path(root).resolve()
+    paths = []
+    for rel_path, metadata in manifest.get("artifacts", {}).items():
+        if category is not None and metadata.get("category") != category:
+            continue
+        path = (root / rel_path).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError:
+            continue
+        paths.append(path)
+    return sorted(paths)
 
 
 def write_canonical_json(data, path):

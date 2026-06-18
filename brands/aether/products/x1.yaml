@@ -8,7 +8,7 @@ product:
       unit: dB
       source:
         type: lab_report
-        ref: docs/x1-noise-test.pdf
+        ref: docs/fixtures/evidence/aether-x1.yaml
       status: verified
     battery:
       value: 38
@@ -16,14 +16,14 @@ product:
       conditions: "ANC off, 50% volume"
       source:
         type: product_spec
-        ref: docs/x1-spec.pdf
+        ref: docs/fixtures/evidence/aether-x1.yaml
       status: verified
     lightweight:
       value: 285
       unit: g
       source:
         type: product_spec
-        ref: docs/x1-spec.pdf
+        ref: docs/fixtures/evidence/aether-x1.yaml
       status: verified
   assets:
     packshot: brands/aether/assets/products/x1/packshot.png

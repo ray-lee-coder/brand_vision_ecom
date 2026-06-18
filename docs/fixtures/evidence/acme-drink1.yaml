@@ -1,0 +1,9 @@
+evidence_type: synthetic_fixture
+issuer: BrandKit beta test fixtures
+issued_at: 2026-06-18
+method: Deterministic fictional beverage analysis used only for compiler and verifier testing.
+license: CC0-1.0
+fact_ids:
+  - facts.vitamin_c
+  - facts.calorie_free
+  - facts.natural_ingredients

@@ -1,0 +1,232 @@
+{
+  "campaign": "acme-launch",
+  "generated_at": "2026-06-18T11:17:54.065713Z",
+  "mode": "offline",
+  "summary": {
+    "failed": 0,
+    "passed": 5,
+    "total": 5
+  },
+  "synthetic_evidence_only": true,
+  "trials": [
+    {
+      "actual_changed_categories": [
+        "visual"
+      ],
+      "actual_model_calls": 0,
+      "after_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "1c97a7c288e2da7a68e2ed5ae7671593f5cacadbe3e9a9d3502b6eec44f70d8b",
+        "visual/xiaohongshu-lifestyle.html": "505bf4e9e3d5f7f41a4ddaf7532a9d79dfac5bde4e02501f718ef037bb8dcd48"
+      },
+      "before_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "changed_artifacts": [
+        "visual/tmall-packshot.html",
+        "visual/xiaohongshu-lifestyle.html"
+      ],
+      "elapsed_seconds": 2.0,
+      "expected_changed_categories": [
+        "visual"
+      ],
+      "id": "brand-primary-color",
+      "mutation": "Set Acme primary color to #D94B1F",
+      "online_model_budget": {
+        "copy": 0,
+        "image": 0
+      },
+      "status": "pass",
+      "unchanged_artifacts": [
+        "content/tmall-product_title.md",
+        "content/tmall-product_title.provenance.json",
+        "content/xiaohongshu-note.md",
+        "content/xiaohongshu-note.provenance.json"
+      ]
+    },
+    {
+      "actual_changed_categories": [
+        "content",
+        "visual"
+      ],
+      "actual_model_calls": 0,
+      "after_hashes": {
+        "content/tmall-product_title.md": "60f4a5273006953c1d847bf1230aada74f6c0b93601a1428d8e15df13055e911",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "8a1226b9b87008fff75208483bcdc11551f2736054b8a374d865ad19c725fe56",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "aac5d600c56443d8a6989e95b9d6324d1811548e7f1e3f1701aba1236a810c26"
+      },
+      "before_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "changed_artifacts": [
+        "content/tmall-product_title.md",
+        "content/xiaohongshu-note.md",
+        "visual/xiaohongshu-lifestyle.html"
+      ],
+      "elapsed_seconds": 1.993,
+      "expected_changed_categories": [
+        "content",
+        "visual"
+      ],
+      "id": "primary-benefit",
+      "mutation": "Change the primary benefit to 阳光柑橘气泡",
+      "online_model_budget": {
+        "copy": 2,
+        "image": 0
+      },
+      "status": "pass",
+      "unchanged_artifacts": [
+        "content/tmall-product_title.provenance.json",
+        "content/xiaohongshu-note.provenance.json",
+        "visual/tmall-packshot.html"
+      ]
+    },
+    {
+      "actual_changed_categories": [
+        "content"
+      ],
+      "actual_model_calls": 0,
+      "after_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "4b51bc0a74ccff0c0e3413d1b93c48bc06a1b37119c13e46a3ae37f11e300ab9",
+        "content/xiaohongshu-note.provenance.json": "34e6a669ae7557a974371227795ded2c487f7aab85026a06bb10ba8a4dcfdf9a",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "before_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "changed_artifacts": [
+        "content/xiaohongshu-note.md",
+        "content/xiaohongshu-note.provenance.json"
+      ],
+      "elapsed_seconds": 1.999,
+      "expected_changed_categories": [
+        "content"
+      ],
+      "id": "remove-unsupported-claim",
+      "mutation": "Remove natural_ingredients fact and 自然原料 message",
+      "online_model_budget": {
+        "copy": 2,
+        "image": 0
+      },
+      "status": "pass",
+      "unchanged_artifacts": [
+        "content/tmall-product_title.md",
+        "content/tmall-product_title.provenance.json",
+        "visual/tmall-packshot.html",
+        "visual/xiaohongshu-lifestyle.html"
+      ]
+    },
+    {
+      "actual_changed_categories": [
+        "content"
+      ],
+      "actual_model_calls": 0,
+      "after_hashes": {
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "content/xiaohongshu-title.md": "a82ef47004c065f28f8d2004265390afd74fda9aad5687486da5ca21289605df",
+        "content/xiaohongshu-title.provenance.json": "9c1288e9a4f371164dd9cb0052aa673b5460469b2a381814ec78464e14d5c637",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "before_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "changed_artifacts": [
+        "content/tmall-product_title.md",
+        "content/tmall-product_title.provenance.json",
+        "content/xiaohongshu-title.md",
+        "content/xiaohongshu-title.provenance.json"
+      ],
+      "elapsed_seconds": 2.01,
+      "expected_changed_categories": [
+        "content"
+      ],
+      "id": "tmall-to-xiaohongshu",
+      "mutation": "Replace the Tmall product title target with Xiaohongshu title",
+      "online_model_budget": {
+        "copy": 2,
+        "image": 0
+      },
+      "status": "pass",
+      "unchanged_artifacts": [
+        "content/xiaohongshu-note.md",
+        "content/xiaohongshu-note.provenance.json",
+        "visual/tmall-packshot.html",
+        "visual/xiaohongshu-lifestyle.html"
+      ]
+    },
+    {
+      "actual_changed_categories": [
+        "visual"
+      ],
+      "actual_model_calls": 0,
+      "after_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "230ac20af831e7db0c013d94612c6ef5bc15458b7c1f5dd5a38612d0ab673585"
+      },
+      "before_hashes": {
+        "content/tmall-product_title.md": "406174d92e996567ad4c580fbbb4d5b75e5c79331012b9134a0653af3d206483",
+        "content/tmall-product_title.provenance.json": "9fc02c00a469e7d35c00634ba41a4babb94de0f8b5dadf974f3e38a398b62dcc",
+        "content/xiaohongshu-note.md": "b48bddf4673b01cdafaf079c3f6c6245828b50cc204ea7342f4c6aaca26afd92",
+        "content/xiaohongshu-note.provenance.json": "4ea9da4e42de1819b934c36245d95f7e7e4508272937b535da6165f740c89df7",
+        "visual/tmall-packshot.html": "d541bcfd2b67e7d3cae4d9b96f9a11fa65668336bb0428742679e11091b69acd",
+        "visual/xiaohongshu-lifestyle.html": "2473275bf3ac4439385211a4464369bd13997ff188459d5facf15fe498f5d81a"
+      },
+      "changed_artifacts": [
+        "visual/xiaohongshu-lifestyle.html"
+      ],
+      "elapsed_seconds": 2.005,
+      "expected_changed_categories": [
+        "visual"
+      ],
+      "id": "replace-background",
+      "mutation": "Replace the lifestyle background prompt",
+      "online_model_budget": {
+        "copy": 0,
+        "image": 1
+      },
+      "status": "pass",
+      "unchanged_artifacts": [
+        "content/tmall-product_title.md",
+        "content/tmall-product_title.provenance.json",
+        "content/xiaohongshu-note.md",
+        "content/xiaohongshu-note.provenance.json",
+        "visual/tmall-packshot.html"
+      ]
+    }
+  ]
+}

@@ -104,9 +104,9 @@ def build_system_prompt(message_plan, facts, claim_rules, channel_constraints, c
   "text": "生成的文案内容",
   "claims": [
     {{
-      "claim": "42dB自适应降噪",
-      "fact_ref": "facts.noise_reduction",
-      "source_ref": "docs/x1-noise-test.pdf",
+      "claim": "{{fact value}}{{fact unit}}",
+      "fact_ref": "facts.{{fact_id}}",
+      "source_ref": "{{evidence_path}}",
       "status": "verified"
     }}
   ]
@@ -146,7 +146,27 @@ def build_user_prompt(content_type, channel_name, message_plan, facts, channel_c
 
 渠道约束: {json.dumps(channel_constraints, indent=2, ensure_ascii=False)}
 
-请生成符合品牌调性的{content_type}文案。"""
+    请生成符合品牌调性的{content_type}文案。"""
+
+
+def validate_copy_response(result, provider):
+    """Validate the provider boundary before generated copy reaches renderers."""
+    if not isinstance(result, dict):
+        raise ProviderError(provider, "INVALID_RESPONSE_SCHEMA", "Response must be a JSON object")
+    if not isinstance(result.get("text"), str) or not result["text"].strip():
+        raise ProviderError(provider, "INVALID_RESPONSE_SCHEMA", "text must be a non-empty string")
+    claims = result.get("claims")
+    if not isinstance(claims, list):
+        raise ProviderError(provider, "INVALID_RESPONSE_SCHEMA", "claims must be an array")
+    required = ("claim", "fact_ref", "source_ref", "status")
+    for index, claim in enumerate(claims):
+        if not isinstance(claim, dict) or any(not isinstance(claim.get(key), str) for key in required):
+            raise ProviderError(
+                provider,
+                "INVALID_RESPONSE_SCHEMA",
+                f"claims[{index}] must contain string fields: {', '.join(required)}",
+            )
+    return result
 
 
 def generate_copy(message_plan, facts, claim_rules, channel_constraints, content_type, channel_name, provider="sensenova"):
@@ -184,7 +204,7 @@ def generate_copy(message_plan, facts, claim_rules, channel_constraints, content
                     detail=f"LLM returned non-JSON response with no parseable JSON: {response[:500]}"
                 )
 
-        return result
+        return validate_copy_response(result, provider)
     except ProviderError:
         raise
     except Exception as e:

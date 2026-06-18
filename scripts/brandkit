@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # BrandKit CLI — 统一入口 (v0.4.0-beta)
+# Every build uses an isolated .build/runs/{run_id}/ root.
 set -uo pipefail
 
 BRANDKIT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,51 +12,59 @@ shift || true
 OFFLINE=0
 ALLOW_WARNINGS=""
 ALLOW_PLACEHOLDER=""
+RUN_ID=""
+SKIP_PNG=0
 
 # Parse global flags — keep args for child commands
 PASSTHROUGH=()
-for arg in "$@"; do
-  case "$arg" in
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --offline) OFFLINE=1 ;;
-    --allow-warnings) ALLOW_WARNINGS="--allow-warnings" ; PASSTHROUGH+=("$arg") ;;
-    --allow-placeholder) ALLOW_PLACEHOLDER="--allow-placeholder" ; PASSTHROUGH+=("$arg") ;;
-    *) PASSTHROUGH+=("$arg") ;;
+    --allow-warnings) ALLOW_WARNINGS="--allow-warnings" ;;
+    --allow-placeholder) ALLOW_PLACEHOLDER="--allow-placeholder" ;;
+    --skip-png) SKIP_PNG=1 ;;
+    --run-id) shift; RUN_ID="${1:-}" ;;
+    --run-id=*) RUN_ID="${1#*=}" ;;
+    *) PASSTHROUGH+=("$1") ;;
   esac
+  shift || true
 done
 set -- "${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}"
 
 do_compile() {
   local campaign="$1"
-  python3 scripts/compile.py "$campaign"
+  python3 scripts/compile.py "$campaign" --build-dir "$BUILD_DIR" \
+    --manifest "$MANIFEST" --run-id "$RUN_ID" --mode "$RUN_MODE"
 }
 
 do_render_visual() {
-  local args=()
+  local args=(--resolved "$RESOLVED" --message-plan "$MESSAGE_PLAN" --output-dir "$OUTPUT_DIR" --manifest "$MANIFEST")
   [[ $OFFLINE -eq 1 ]] && args+=(--placeholder)
   [[ -n "$ALLOW_PLACEHOLDER" ]] && args+=("$ALLOW_PLACEHOLDER")
+  [[ $SKIP_PNG -eq 1 ]] && args+=(--skip-png)
   python3 scripts/render_visual.py "${args[@]}"
 }
 
 do_render_content() {
-  local args=()
+  local args=(--resolved "$RESOLVED" --message-plan "$MESSAGE_PLAN" --output-dir "$OUTPUT_DIR" --manifest "$MANIFEST")
   [[ $OFFLINE -eq 1 ]] && args+=(--dry-run)
   python3 scripts/render_content.py "${args[@]}"
 }
 
 do_verify() {
+  local args=(--resolved "$RESOLVED" --message-plan "$MESSAGE_PLAN" --output-dir "$OUTPUT_DIR" --verify-dir "$VERIFY_DIR" --manifest "$MANIFEST")
   if [[ -n "$ALLOW_WARNINGS" ]]; then
-    python3 scripts/verify.py --allow-warnings
-  else
-    python3 scripts/verify.py
+    args+=(--allow-warnings)
   fi
+  python3 scripts/verify.py "${args[@]}"
 }
 
 do_validate() {
+  local args=(--resolved "$RESOLVED" --output-dir "$OUTPUT_DIR" --verify-dir "$VERIFY_DIR" --manifest "$MANIFEST")
   if [[ -n "$ALLOW_WARNINGS" ]]; then
-    python3 scripts/validate_channel.py --allow-warnings
-  else
-    python3 scripts/validate_channel.py
+    args+=(--allow-warnings)
   fi
+  python3 scripts/validate_channel.py "${args[@]}"
 }
 
 case "$CMD" in
@@ -72,6 +81,15 @@ case "$CMD" in
   build)
     CAMPAIGN="${1:-campaigns/618-launch.yaml}"
     CAMPAIGN_NAME="$(basename "$CAMPAIGN" .yaml)"
+    RUN_ID=${RUN_ID:-"${CAMPAIGN_NAME}-$(date +%s)-$$-$RANDOM"}
+    RUN_MODE=$([[ $OFFLINE -eq 1 ]] && echo offline || echo online)
+    RUN_ROOT=".build/runs/$RUN_ID"
+    BUILD_DIR="$RUN_ROOT/build"
+    VERIFY_DIR="$RUN_ROOT/verify"
+    MANIFEST="$RUN_ROOT/manifest.json"
+    OUTPUT_DIR="output/runs/$RUN_ID"
+    RESOLVED="$BUILD_DIR/resolved-task.json"
+    MESSAGE_PLAN="$BUILD_DIR/message-plan.json"
 
     echo "[BUILD] Compiling specs from: $CAMPAIGN"
     do_compile "$CAMPAIGN" || exit $?
@@ -99,7 +117,8 @@ case "$CMD" in
     fi
 
     echo ""
-    echo "[DONE] Build complete. Output in output/$CAMPAIGN_NAME/"
+    echo "[DONE] Build complete. Output in $OUTPUT_DIR/$CAMPAIGN_NAME/"
+    echo "[DONE] Run manifest: $MANIFEST"
     exit 0
     ;;
 
@@ -112,6 +131,7 @@ case "$CMD" in
       [[ $OFFLINE -eq 1 ]] && child_args+=(--offline)
       [[ -n "$ALLOW_WARNINGS" ]] && child_args+=("$ALLOW_WARNINGS")
       [[ -n "$ALLOW_PLACEHOLDER" ]] && child_args+=("$ALLOW_PLACEHOLDER")
+      [[ $SKIP_PNG -eq 1 ]] && child_args+=(--skip-png)
       bash "$0" "${child_args[@]}" || total_status=1
     done
     echo ""
@@ -127,15 +147,29 @@ case "$CMD" in
     SUB="${1:-visual}"
     shift 2>/dev/null || true
     case "$SUB" in
-      visual) do_render_visual "$@" ;;
-      content) do_render_content "$@" ;;
+      visual)
+        # Default campaign name for direct render; override via --resolved if needed
+        local_name="${1:-618-launch}"
+        do_render_visual "$local_name" "$@"
+        ;;
+      content)
+        local_name="${1:-618-launch}"
+        do_render_content "$local_name" "$@"
+        ;;
       ab) python3 scripts/ab_generator.py "$@" ;;
-      *) echo "Usage: brandkit render <visual|content|ab> [options]" ;;
+      *) echo "Usage: brandkit render <visual|content|ab> [campaign] [options]" ;;
     esac
     ;;
 
-  verify) do_verify ;;
-  validate) do_validate ;;
+  verify)
+    local_name="${1:-618-launch}"
+    do_verify "$local_name"
+    ;;
+
+  validate)
+    local_name="${1:-618-launch}"
+    do_validate "$local_name"
+    ;;
 
   baseline)
     CAMPAIGN="${1:-campaigns/618-launch.yaml}"
@@ -146,7 +180,7 @@ case "$CMD" in
 
   ab)
     echo "[AB] Generating A/B drafts..."
-    python3 scripts/ab_generator.py --resolved .build/resolved-task.json --message-plan .build/message-plan.json --dry-run "$@"
+    python3 scripts/ab_generator.py --dry-run "$@"
     ;;
 
   clean)
@@ -158,14 +192,16 @@ case "$CMD" in
     echo "BrandKit v0.4.0-beta — 品牌约束视觉与内容编译器"
     echo ""
     echo "Usage:"
-    echo "  brandkit build [campaign]         Build campaign"
+    echo "  brandkit build [campaign]         Build campaign in an isolated run directory"
     echo "    --offline                       Use template fallback instead of LLM"
     echo "    --allow-warnings                Don't fail on validation warnings"
     echo "    --allow-placeholder             Allow placeholder product images"
+    echo "    --run-id ID                     Set a run ID (mainly for automation)"
+    echo "    --skip-png                      Skip PNG rendering (test/debug only)"
     echo "  brandkit build-all                 Build all campaigns"
-    echo "  brandkit render <visual|content|ab>"
-    echo "  brandkit verify"
-    echo "  brandkit validate"
+    echo "  brandkit render <visual|content|ab> [campaign]"
+    echo "  brandkit verify [campaign]"
+    echo "  brandkit validate [campaign]"
     echo "  brandkit baseline [campaign]       Pure-prompt baseline comparison"
     echo "  brandkit clean                     Clean .build/ and output/"
     echo ""

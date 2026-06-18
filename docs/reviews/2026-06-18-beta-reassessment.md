@@ -5,17 +5,17 @@
 > Target: reliable Beta for personal and small-team use
 > Decision: **NOT CLEARED for Beta release**
 > Review mode: gstack `/review` checklist plus goal-alignment and executable-gate audit
-> gstack installation: **VERIFIED, UPDATE AVAILABLE** (`v1.29.0.0` installed; `v1.58.1.0` available; Codex setup completed; 453 package tests passed)
+> gstack installation: **VERIFIED FOR CODEX SKILLS** (`v1.29.0.0`, commit `0660547`; generated `~/.codex/skills/gstack-*` links resolve). A global `gstack` command is not the Codex installation interface; skills such as `/review` are the interface.
 
-## Executive Result
+## Current Result
 
-The implementation fixes parts of compilation, browser-error handling, malformed provider responses, and CLI failure aggregation. It does not satisfy the Beta contract. The main gap is not production hardening; it is still local correctness and trustworthiness.
+Recovery R1-R4 and the automated portion of R5 are complete in the current working tree. The remaining Beta release blocker is real non-author acceptance; production hardening remains intentionally deferred.
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Stage 1: executable contract | **PARTIAL** | Clean tests run, but weak/xfail cases remain and CI references a missing fixture |
-| Stage 2: Beta foundation | **FAIL** | Offline build fails; schemas are not enforced; run isolation and fail-closed verification are incomplete |
-| Stage 3: usage evidence | **NOT STARTED** | No second brand, acceptance rubric, evidence report, or non-author trial |
+| Stage 1: executable contract | **PASS locally** | Full suite has no expected failures; final command evidence is recorded below |
+| Stage 2: Beta foundation | **PASS locally** | Run-scoped manifests, active contracts, fail-closed verification, and offline builds are covered |
+| Stage 3: usage evidence | **PARTIAL** | Second brand and 5/5 automated modification trials exist; named non-author acceptance is pending |
 
 ## Product Plan Assessment
 
@@ -28,7 +28,9 @@ The plan itself is not yet an executable source of truth:
 3. **[P1] (confidence 9/10) `docs/superpowers/plans/2026-06-18-beta-reliability.md:228-500`** - completion is described mainly as file edits and focused tests. It does not require the real `brandkit build` and `build-all` paths to pass after each workstream, which allowed Stage 2 to be declared complete while both commands fail.
 4. **[P2] (confidence 10/10) `PRODUCT-PLAN.md:390-508`** - M0-M3 exit checklists remain unverified while the header calls the Alpha implementation complete. These milestones may describe component history, but only the Beta gates may describe release readiness.
 
-## Blocking Findings
+## Historical Baseline Findings
+
+The findings in this section describe the reviewed baseline and are superseded where the later Recovery sections record a verified fix. They are retained for audit traceability.
 
 1. **[P1] (confidence 10/10) `scripts/compile.py:204-210`** - schema validation results are discarded. `validate_document()` returns an error list, but the compiler neither checks the list nor calls `validate_document_or_raise`. A campaign with an unknown root field compiled successfully in the clean clone. The active compiler also does not validate brand, visual, content, product, or channel documents.
 
@@ -131,4 +133,55 @@ R3 and later must also run a clean-clone smoke test and the ordered/concurrent i
 
 Decision: continue R3 now. It is Beta correctness work, not production hardening. Do not start the R3 refactor under the assumption that it is the only remaining gap; after R3, close the explicit R1/R2/R4 gates before beginning real R5 acceptance.
 
-Production tenancy, hosted services, databases, queues, authentication, and collaboration remain correctly deferred. None of those should be started to compensate for the unresolved local Beta failures above.
+### Progress Recheck 2026-06-18 (`794143f`)
+
+| Batch | Verified status | Fresh evidence |
+|---|---|---|
+| R1 | DONE | Local and clean-clone suites both report `24 passed`; clean single build and local `build-all --offline` exit zero |
+| R2 | PARTIAL | Six active schemas are enforced. `apply_overrides()` selects `target.type` before `content_type`, so content-specific overrides are not applied; evidence remains dummy ASCII text |
+| R3 | PARTIAL | Render/verify append to campaign-named manifests, but `.build/resolved-task.json`, `.build/message-plan.json`, `.build/verify/*`, and deterministic campaign run IDs remain shared. Validator still scans every output campaign and guesses the first directory. No ordered or concurrent isolation test exists |
+| R4 | PARTIAL | Template claim literals were reduced, but `background_generator.py` still defaults to premium audio/urban professionals and `validate_channel.py` still uses hardcoded `CHANNEL_PROFILES` instead of compiled channel YAML |
+| R5 | PARTIAL | Acme is a useful second fixture. Required modification evidence, artifact hashes/call budgets, evidence report, and non-author rubric results are absent |
+
+The CLI gates are green, but they do not prove R2-R5 completion because current tests do not exercise content override targeting, concurrent run isolation, compiled channel-rule validation, or human acceptance.
+
+### Recovery Implementation 2026-06-18 (working tree after `794143f`)
+
+| Batch | Status | Verification |
+|---|---|---|
+| R1 | DONE | `39 passed`; normal single build and all five offline campaigns exit zero |
+| R2 | DONE | Six schemas remain on the active compiler path; content override targeting has direct regression coverage; product refs now use declared synthetic evidence fixtures with issuer/date/method/fact IDs |
+| R3 | DONE | Every CLI build receives a unique run root. Compile, render, verify, and channel validation receive explicit paths and one manifest. Concurrent two-campaign and deleted-declared-artifact tests pass |
+| R4 | DONE | Scene prompts preserve brand policy, default prompts and provider schema examples are brand-neutral, channel validation consumes the compiled contract, provider response shape is strict, and missing manifest artifacts fail closed |
+| R5 | PARTIAL | Acme fixture and acceptance materials exist; 5/5 isolated offline modification trials now pass with hashes, boundaries, call counts, and timing. A named non-author result is still required |
+
+Fresh evidence:
+
+```text
+pytest: 39 passed
+single offline build: exit 0, 6 targets, 14 artifacts, 3 reports
+build-all offline: exit 0, 5 campaign manifests
+concurrent isolation: pass
+manifest hash/path audit: pass (SHA-256, run-scoped)
+```
+
+Production tenancy, hosted services, databases, queues, authentication, and collaboration remain correctly deferred. None of those should be started before the remaining non-author Beta acceptance gate is satisfied.
+
+### R5 Automated Evidence Closure 2026-06-18
+
+`docs/beta/modification-evidence.json` records all five required Acme modifications. Each trial builds in an isolated workspace, compares normalized artifact hashes, checks the changed artifact category boundary, records elapsed time and the online call budget, and confirms zero actual model calls in offline mode. Result: **5 passed, 0 failed**.
+
+This closes the automated R5 modification-evidence gap only. The release decision remains **NOT CLEARED** until `docs/beta/acceptance-rubric.md` contains a real named non-author result meeting the rubric thresholds. Online provider budgets also remain unverified by these offline trials.
+
+Final local verification:
+
+```text
+project pytest: 41 passed, no warnings
+clean-copy pytest: 41 passed, no warnings
+single offline build: exit 0
+build-all offline: exit 0, 5 campaigns
+R5 modification trials: 5 passed, 0 failed
+gstack full regression: exit 0
+```
+
+The final output audit also separates state from presentation: unmet cross-channel preferences remain non-blocking `Informational` findings and now render with `ℹ`, not the failure icon used by blocking file-validation errors.
