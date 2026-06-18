@@ -41,3 +41,9 @@ def test_mit_license_claim_has_license_file():
 
     assert "MIT License" in license_text
     assert "Permission is hereby granted" in license_text
+
+
+def test_runtime_http_dependency_is_declared():
+    requirements = (REPO_ROOT / "requirements.txt").read_text().splitlines()
+
+    assert any(line.startswith("requests==") for line in requirements)
