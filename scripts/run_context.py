@@ -7,9 +7,27 @@ verification. No timestamps in canonical hash inputs.
 """
 import hashlib
 import json
+import re
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+
+
+RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
+class ManifestError(RuntimeError):
+    """Raised when a required run manifest cannot be consumed."""
+
+
+def validate_run_id(run_id: str) -> str:
+    """Return a safe run ID or raise before it can influence a path."""
+    if not isinstance(run_id, str) or not RUN_ID_PATTERN.fullmatch(run_id):
+        raise ValueError(
+            "Invalid run ID: use 1-128 ASCII letters, digits, dots, underscores, or hyphens; "
+            "the first character must be alphanumeric"
+        )
+    return run_id
 
 
 @dataclass(frozen=True)
@@ -107,7 +125,8 @@ class ManifestBuilder:
 
 def create_run_context(campaign_name: str, root: Path, mode: str = "offline", run_id=None) -> RunContext:
     """Create a RunContext with a unique or caller-supplied run ID."""
-    run_id = run_id or f"{campaign_name}-{uuid.uuid4().hex[:12]}"
+    run_id = f"{campaign_name}-{uuid.uuid4().hex[:12]}" if run_id is None else run_id
+    validate_run_id(run_id)
     return RunContext(run_id=run_id, campaign_name=campaign_name, root=root, mode=mode)
 
 
@@ -121,18 +140,24 @@ def get_or_create_manifest(ctx: RunContext) -> dict:
     return builder.data
 
 
-def read_manifest(path: Path) -> dict:
-    """Read a manifest JSON file and return its contents.
-    
-    Returns an empty dict if the file doesn't exist or is invalid.
-    Useful for scripts that need to consume the manifest for campaign context.
-    """
-    if path.exists():
-        try:
-            return read_json(path)
-        except (json.JSONDecodeError, OSError):
-            return {}
-    return {}
+def read_manifest(path: Path, required: bool = False) -> dict:
+    """Read a manifest, failing closed when the caller supplied it explicitly."""
+    path = Path(path)
+    if not path.exists():
+        if required:
+            raise ManifestError(f"Required manifest not found: {path}")
+        return {}
+    try:
+        manifest = read_json(path)
+    except (json.JSONDecodeError, OSError) as exc:
+        if required:
+            raise ManifestError(f"Invalid manifest {path}: {exc}") from exc
+        return {}
+    if not isinstance(manifest, dict):
+        if required:
+            raise ManifestError(f"Invalid manifest {path}: root must be an object")
+        return {}
+    return manifest
 
 
 def manifest_artifact_paths(manifest: dict, root: Path, category=None):

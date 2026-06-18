@@ -10,7 +10,7 @@ description: >
 
 ## When to use
 
-- User asks to **generate product images or copy** for e-commerce (天猫/小红书/抖音/Instagram)
+- User asks to **generate product images or copy** for e-commerce (天猫/小红书)
 - User wants to **keep brand identity consistent** across visual and content outputs
 - User needs to **adapt the same product** for different platforms without rewriting prompts
 - User wants **claim-checked, factual copy** with provenance tracking
@@ -27,32 +27,25 @@ description: >
 1. IDENTIFY the brand → load brands/{brand}/brand-core.yaml
 2. IDENTIFY the product → load brands/{brand}/products/{sku}.yaml
 3. IDENTIFY the campaign → create or edit campaigns/{campaign}.yaml
-4. RUN: brandkit build campaigns/{campaign}.yaml
-5. REVIEW: output/ directory for visual + content + provenance
-6. VALIDATE: brandkit validate for channel differentiation report
-7. COMPARE: brandkit baseline {campaign} --dry-run for pure-prompt comparison
+4. RUN: bash scripts/brandkit build campaigns/{campaign}.yaml --offline
+5. REVIEW: the printed output/runs/{run_id}/{campaign}/ directory
+6. CHECK: the printed .build/runs/{run_id}/manifest.json and verification reports
 ```
 
 ## Quick commands
 
 ```bash
-# Build full campaign kit
-brandkit build campaigns/618-launch.yaml
+# Build full campaign kit without network or provider calls
+bash scripts/brandkit build campaigns/618-launch.yaml --offline
 
 # Build all campaigns
-brandkit build-all
-
-# Generate A/B drafts for a content type
-brandkit render ab --content-type product_title --channel tmall
-
-# Validate channel differentiation
-brandkit validate
+bash scripts/brandkit build-all --offline
 
 # Run baseline comparison
-brandkit baseline campaigns/618-launch.yaml --dry-run
+bash scripts/brandkit baseline campaigns/618-launch.yaml --dry-run
 
 # Clean build artifacts
-brandkit clean
+bash scripts/brandkit clean
 ```
 
 ## Architecture
@@ -62,7 +55,7 @@ User prompt
   ↓
 SKILL.md (this file)
   ↓
-brandkit CLI
+scripts/brandkit CLI
   ├─ compile.py   → resolved-task.json + message-plan.json
   ├─ render_visual.py → HTML + PNG (foreground/background separated)
   ├─ render_content.py → Markdown + provenance

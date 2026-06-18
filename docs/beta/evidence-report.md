@@ -1,13 +1,13 @@
 # BrandKit Beta Evidence Report
 
-> Status: **AUTOMATED MODIFICATION EVIDENCE COMPLETE; PENDING NON-AUTHOR ACCEPTANCE**
-> Automated baseline commit: `794143f` plus uncommitted Recovery fixes
+> Status: **R6 LOCAL GATES COMPLETE; REMOTE CI AND R7 EVIDENCE PENDING**
+> Recovery baseline commit: `e335f14`; final release SHA must be recorded after the R6 branch lands
 
 ## Automated Gates
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Test suite | Full pytest and clean-copy run | 41 passed in each environment; no warnings |
+| Test suite | Full pytest in the R6 worktree | 60 passed; clean-clone result recorded after candidate commit |
 | Offline single build | `bash scripts/brandkit build campaigns/618-launch.yaml --offline` | PASS |
 | Offline all campaigns | `bash scripts/brandkit build-all --offline` | PASS (5 campaigns) |
 | Concurrent isolation | `tests/integration/test_run_isolation.py` | Automated |
@@ -41,4 +41,4 @@ Use `docs/beta/acceptance-rubric.md`. Do not mark Beta cleared until the complet
 
 ## Release Decision
 
-**NOT CLEARED.** The five automated modification trials pass, but they do not replace named non-author product-use evidence or exercise the stated online call budgets.
+**NOT CLEARED.** Local R6 gates and five automated modification trials pass, but the current candidate still needs remote Ubuntu/macOS CI. R7 must then cover PNG determinism, observed online call/error behavior, and named non-author product-use evidence on one fixed SHA.

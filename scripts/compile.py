@@ -451,7 +451,11 @@ def compile_specs(
             builder.add_artifact(msg_path, "compiled")
             builder.write(manifest_path)
         except Exception as e:
-            print(f"[WARN] Manifest not written: {e}")
+            print(f"[ERROR] Manifest not written: {e}")
+            return {
+                "status": "failed",
+                "conflicts": [{"type": "manifest_write_failed", "detail": str(e)}],
+            }
 
     return {"status": "ok", "resolved": resolved, "message_plan": message_plan}
 

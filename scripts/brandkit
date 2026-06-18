@@ -13,6 +13,7 @@ OFFLINE=0
 ALLOW_WARNINGS=""
 ALLOW_PLACEHOLDER=""
 RUN_ID=""
+RUN_ID_SET=0
 SKIP_PNG=0
 
 # Parse global flags — keep args for child commands
@@ -23,13 +24,20 @@ while [[ $# -gt 0 ]]; do
     --allow-warnings) ALLOW_WARNINGS="--allow-warnings" ;;
     --allow-placeholder) ALLOW_PLACEHOLDER="--allow-placeholder" ;;
     --skip-png) SKIP_PNG=1 ;;
-    --run-id) shift; RUN_ID="${1:-}" ;;
-    --run-id=*) RUN_ID="${1#*=}" ;;
+    --run-id) shift; RUN_ID="${1:-}"; RUN_ID_SET=1 ;;
+    --run-id=*) RUN_ID="${1#*=}"; RUN_ID_SET=1 ;;
     *) PASSTHROUGH+=("$1") ;;
   esac
   shift || true
 done
 set -- "${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}"
+
+if [[ $RUN_ID_SET -eq 1 ]]; then
+  if [[ -z "$RUN_ID" || ${#RUN_ID} -gt 128 || "$RUN_ID" == *[!A-Za-z0-9._-]* || "${RUN_ID:0:1}" == [!A-Za-z0-9] ]]; then
+    echo "[ERROR] Invalid run ID: use 1-128 ASCII letters, digits, dots, underscores, or hyphens; first character must be alphanumeric" >&2
+    exit 2
+  fi
+fi
 
 do_compile() {
   local campaign="$1"
@@ -143,32 +151,9 @@ case "$CMD" in
     exit $total_status
     ;;
 
-  render)
-    SUB="${1:-visual}"
-    shift 2>/dev/null || true
-    case "$SUB" in
-      visual)
-        # Default campaign name for direct render; override via --resolved if needed
-        local_name="${1:-618-launch}"
-        do_render_visual "$local_name" "$@"
-        ;;
-      content)
-        local_name="${1:-618-launch}"
-        do_render_content "$local_name" "$@"
-        ;;
-      ab) python3 scripts/ab_generator.py "$@" ;;
-      *) echo "Usage: brandkit render <visual|content|ab> [campaign] [options]" ;;
-    esac
-    ;;
-
-  verify)
-    local_name="${1:-618-launch}"
-    do_verify "$local_name"
-    ;;
-
-  validate)
-    local_name="${1:-618-launch}"
-    do_validate "$local_name"
+  render|verify|validate)
+    echo "[ERROR] Direct '$CMD' is not supported. Use 'brandkit build <campaign>' to run the isolated compile, render, verify, and validate pipeline." >&2
+    exit 2
     ;;
 
   baseline)
@@ -199,9 +184,6 @@ case "$CMD" in
     echo "    --run-id ID                     Set a run ID (mainly for automation)"
     echo "    --skip-png                      Skip PNG rendering (test/debug only)"
     echo "  brandkit build-all                 Build all campaigns"
-    echo "  brandkit render <visual|content|ab> [campaign]"
-    echo "  brandkit verify [campaign]"
-    echo "  brandkit validate [campaign]"
     echo "  brandkit baseline [campaign]       Pure-prompt baseline comparison"
     echo "  brandkit clean                     Clean .build/ and output/"
     echo ""

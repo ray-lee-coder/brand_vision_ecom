@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 import re
 
-from run_context import manifest_artifact_paths, read_manifest
+from run_context import ManifestError, manifest_artifact_paths, read_manifest
 
 
 def verify_visual(html_path, resolved, message_plan):
@@ -230,6 +230,13 @@ def main():
     parser.add_argument("--allow-warnings", action="store_true", help="Don't fail on warnings")
     args = parser.parse_args()
 
+    explicit_manifest = Path(args.manifest) if args.manifest else None
+    try:
+        manifest = read_manifest(explicit_manifest, required=True) if explicit_manifest else None
+    except ManifestError as exc:
+        print(f"[ERROR] {exc}")
+        sys.exit(1)
+
     # Resolve campaign-scoped paths
     resolved_path = Path(args.resolved)
     if not resolved_path.exists():
@@ -271,10 +278,10 @@ def main():
 
     # Determine campaign name from resolved task, then enrich from manifest
     campaign_name = resolved.get("campaign", {}).get("name", "")
-    manifest_path = Path(args.manifest) if args.manifest else (
+    manifest_path = explicit_manifest or (
         Path(f".build/{campaign_name}/manifest.json") if campaign_name else Path(".build/manifest.json")
     )
-    manifest = read_manifest(manifest_path)
+    manifest = manifest if manifest is not None else read_manifest(manifest_path)
     campaign_name = manifest.get("campaign", campaign_name)
     declared_artifacts = manifest_artifact_paths(manifest, Path.cwd()) if manifest else []
     missing_manifest_artifacts = [path for path in declared_artifacts if not path.exists()]

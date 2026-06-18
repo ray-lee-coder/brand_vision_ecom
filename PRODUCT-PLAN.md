@@ -1,10 +1,10 @@
 # BrandKit · 产品规划与行动方案
 
-> 版本：Product Plan v2.2-beta-recovery
+> 版本：Product Plan v2.3-beta-release-truth
 > 制定日期：2026-06-17 (updated 2026-06-18)
 > 产品阶段：Alpha implementation complete; Beta validation pending
 > 当前目标：个人/小团队可靠使用的 Beta
-> 发布状态：NOT CLEARED；必须通过 Stage 1-3 gates（见 docs/superpowers/plans/2026-06-18-beta-reliability.md）
+> 发布状态：NOT CLEARED；R6 Release Truth 与 R7 Beta Evidence 尚未闭环
 > 产品形态：Spec Files + CLI Executor + Agent Skill（四层架构，不上 Web/DB/协作）
 > 生产级改造：明确不在本轮范围，待 Beta 使用证据成立后评估
 > Beta 退出标准：见末尾 Beta Milestone 节
@@ -541,15 +541,17 @@ Artifacts                   ← resolved-task.json / message-plan.json / PNG / H
 > **Target:** Personal/small-team usable Beta (not production)
 > **Prerequisites:** M0-M3 alpha components exist; their historical reports are not Beta evidence
 
-### 当前 Gate 状态（2026-06-18 复评）
+### 当前 Gate 状态（2026-06-18 严格复评）
 
 | Gate | 状态 | 退出条件 |
 |---|---|---|
-| Stage 1: Executable Contract | PARTIAL | 全部已知 P1 都有有效回归测试，CI 引用真实 fixture，测试无 XPASS/XFAIL |
-| Stage 2: Beta Foundation | FAIL | clean clone 的单 campaign 与 `build-all --offline` 均通过，契约、隔离和验证失败关闭 |
-| Stage 3: Usage Evidence | NOT STARTED | 第二品牌、四个 campaign、五类修改任务与非作者验收证据齐全 |
+| Stage 1: Executable Contract | PASS LOCALLY | 全部已知 Recovery P1 有回归测试；仍需当前 RC SHA 的远端 CI 证据 |
+| Stage 2: Beta Foundation | PARTIAL | 契约、隔离和离线构建本地通过；PNG 确定性、在线错误矩阵和双系统 CI 待闭环 |
+| Stage 3: Usage Evidence | PARTIAL | 两品牌、五 campaign、五类离线修改试验完成；具名非作者验收仍为空 |
 
 状态只由可复现 gate 证据更新，不由提交信息、文件数量或 M0-M3 历史报告更新。
+
+当前执行顺序：Recovery R1-R5 -> R6 Release Truth（公开接口、文档、安全、固定 RC、CI）-> R7 Beta Evidence（确定性、在线矩阵、非作者验收）-> Beta prerelease。
 
 ### Beta 退出标准
 

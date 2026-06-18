@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from run_context import manifest_artifact_paths, read_manifest
+from run_context import ManifestError, manifest_artifact_paths, read_manifest
 
 
 def format_diff_icon(matches_expectation):
@@ -301,7 +301,11 @@ def main():
     verify_dir = Path(args.verify_dir)
 
     manifest_path = Path(args.manifest) if args.manifest else Path(".build/manifest.json")
-    manifest = read_manifest(manifest_path)
+    try:
+        manifest = read_manifest(manifest_path, required=bool(args.manifest))
+    except ManifestError as exc:
+        print(f"[ERROR] {exc}")
+        sys.exit(1)
     campaign_name = manifest.get("campaign", "")
 
     # Campaign-scope verify dir

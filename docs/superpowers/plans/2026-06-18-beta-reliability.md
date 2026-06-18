@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **Reassessment 2026-06-18:** Stage 1 is partial, Stage 2 is not complete, and Stage 3 has not started. Beta release remains **NOT CLEARED**. See `docs/reviews/2026-06-18-beta-reassessment.md`.
+> **Strict reassessment 2026-06-18:** Recovery R1-R4 is complete and automated R5 evidence passes, but Beta remains **NOT CLEARED**. R6 Release Truth must precede R7 human acceptance. See `docs/reviews/2026-06-18-gstack-multirole-goal-review.md`.
 
 ## Current Execution Contract
 
@@ -15,6 +15,8 @@ Commit labels and file presence do not complete a task. A task is complete only 
 | R3 Run ownership | DONE | Explicit run roots isolate build/output/verify; manifests drive downstream artifact selection; concurrent and missing-artifact tests pass |
 | R4 Trust boundary | DONE | Fact-bound templates, brand-neutral prompts, compiled channel contracts, strict provider response shape, and fail-closed manifest verification are tested |
 | R5 Product evidence | PARTIAL | Five isolated offline modification trials pass with recorded hashes, boundaries, call counts, and timing; completed non-author rubric remains pending |
+| R6 Release truth | IN PROGRESS | Public CLI, run ID safety, manifest failure semantics, documentation, license, fixed RC, and current CI evidence |
+| R7 Beta evidence | NOT STARTED | PNG determinism, observed provider budgets/error matrix, and named non-author acceptance on one RC SHA |
 
 Mandatory gates after each batch:
 
