@@ -305,6 +305,13 @@ def main():
     print(f"Content: {content_report['total_passed']} passed, {content_report['total_failed']} failed")
     if build_blocked:
         print(f"[BLOCKED] Unsupported claims detected — build failed")
+
+    # R2: Zero-artifact check — if no checks were performed, fail
+    total_checks = visual_report["total_passed"] + visual_report["total_failed"] + content_report["total_passed"] + content_report["total_failed"]
+    if total_checks == 0:
+        print(f"[FAIL] No verification checks performed (no artifacts found)")
+        if not args.allow_warnings:
+            sys.exit(1)
     print(f"{'='*50}")
 
     has_failures = (visual_report["total_failed"] > 0 or content_report["total_failed"] > 0 or build_blocked)

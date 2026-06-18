@@ -203,25 +203,50 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
 
     # ── Contract validation (schema, refs, evidence) ──
     if HAS_CONTRACTS:
-        try:
-            validate_document("campaign", campaign, str(campaign_path))
-        except Exception as e:
-            print(f"[CONTRACT] Campaign schema: {e}")
-            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": str(e)}]}
+        # Campaign schema validation — check error list, not just exceptions
+        campaign_errors = validate_document("campaign", campaign, str(campaign_path))
+        if campaign_errors:
+            for err in campaign_errors:
+                print(f"[CONTRACT] Campaign schema: {err['path']}: {err['message']}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": campaign_errors[0]['message']}]}
 
     # Resolve brand ref
     brand_ref = campaign["campaign"]["brand_ref"]
     brand_dir_resolved = Path(brand_ref).parent
     brand_core = load_yaml(brand_ref)
+    if HAS_CONTRACTS:
+        brand_errors = validate_document("brand-core", brand_core, brand_ref)
+        if brand_errors:
+            for err in brand_errors:
+                print(f"[CONTRACT] Brand-core schema: {err['path']}: {err['message']}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": brand_errors[0]['message']}]}
 
     # Load visual-spec + content-spec
     visual_spec = load_yaml(str(brand_dir_resolved / "visual-spec.yaml"))
     content_spec = load_yaml(str(brand_dir_resolved / "content-spec.yaml"))
+    if HAS_CONTRACTS:
+        vs_errors = validate_document("visual-spec", visual_spec, str(brand_dir_resolved / "visual-spec.yaml"))
+        if vs_errors:
+            for err in vs_errors:
+                print(f"[CONTRACT] Visual-spec schema: {err['path']}: {err['message']}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": vs_errors[0]['message']}]}
+        cs_errors = validate_document("content-spec", content_spec, str(brand_dir_resolved / "content-spec.yaml"))
+        if cs_errors:
+            for err in cs_errors:
+                print(f"[CONTRACT] Content-spec schema: {err['path']}: {err['message']}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": cs_errors[0]['message']}]}
 
     # Load product facts
     product_ref = campaign["campaign"]["product_ref"]
     product_facts = load_yaml(product_ref)
 
+    # ── Product schema validation ──
+    if HAS_CONTRACTS:
+        prod_errors = validate_document("product", product_facts, product_ref)
+        if prod_errors:
+            for err in prod_errors:
+                print(f"[CONTRACT] Product schema: {err['path']}: {err['message']}")
+            return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": prod_errors[0]['message']}]}
     # ── Evidence file existence check ──
     if HAS_CONTRACTS:
         product_data = product_facts.get("product", {})
@@ -243,7 +268,14 @@ def compile_specs(brand_dir, campaign_path, channels_dir, build_dir):
         if ch and ch not in channels:
             ch_path = Path(channels_dir) / f"{ch}.yaml"
             if ch_path.exists():
-                channels[ch] = load_yaml(str(ch_path))
+                ch_data = load_yaml(str(ch_path))
+                if HAS_CONTRACTS:
+                    ch_errors = validate_document("channel", ch_data, str(ch_path))
+                    if ch_errors:
+                        for err in ch_errors:
+                            print(f"[CONTRACT] Channel '{ch}' schema: {err['path']}: {err['message']}")
+                        return {"status": "failed", "conflicts": [{"type": "schema_violation", "detail": ch_errors[0]['message']}]}
+                channels[ch] = ch_data
 
     # ── Merge resolved task ──
     resolved = {}

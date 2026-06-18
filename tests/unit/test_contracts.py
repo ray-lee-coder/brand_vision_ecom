@@ -16,24 +16,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"
 # ── Helper: build a minimal valid campaign dir with correct YAML structure ──
 BRAND_CORE = """brand:
   name: TestBrand
-  colors:
-    primary: '#000'
-    secondary: '#666'
-    accent: '#888'
-    background: '#FFF'
-  typography:
-    latin:
-      heading: Inter
-      body: Inter
-  logo:
-    min_size_px: 48
-    clear_space_px: 24
-    allowed_backgrounds: [light, dark]
-  voice:
-    tone: [precise]
-    avoid: []
-  claims:
-    require_evidence: []
+  category: test
+  positioning: test brand
+colors:
+  primary: '#000000'
+  secondary: '#666666'
+  accent: '#888888'
+  background: '#FFFFFF'
+typography:
+  latin:
+    heading: Inter
+    body: Inter
+logo:
+  min_size_px: 48
+  clear_space_px: 24
+  allowed_backgrounds: [light, dark]
+voice:
+  tone: [precise]
+  avoid: []
+claims:
+  require_evidence: []
 """
 
 VISUAL_SPEC = """visual:
@@ -244,7 +246,6 @@ def test_channel_validation_uses_compiled_contract():
 
 
 # --- R1: Schema-path validation — unknown root field must be rejected ---
-@pytest.mark.xfail(strict=True, reason="P1: compile.py validate_document() result is discarded")
 def test_schema_rejects_unknown_root_field():
     """Campaign with unknown root-level field must fail compilation."""
     from compile import compile_campaign
@@ -279,7 +280,6 @@ unknown_field: should be rejected
 
 
 # --- R1: Zero-artifact verification must fail ---
-@pytest.mark.xfail(strict=True, reason="P1: verify exits 0 when no campaign output exists")
 def test_zero_artifact_verification_fails():
     """Verify with no artifacts must exit non-zero."""
     import subprocess
