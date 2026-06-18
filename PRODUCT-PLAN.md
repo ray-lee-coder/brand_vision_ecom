@@ -1,10 +1,14 @@
 # BrandKit · 产品规划与行动方案
 
-> 版本：Product Plan v2.1
-> 制定日期：2026-06-17
-> 产品阶段：M0-A Compiler Spine
+> 版本：Product Plan v2.2-beta-recovery
+> 制定日期：2026-06-17 (updated 2026-06-18)
+> 产品阶段：Alpha implementation complete; Beta validation pending
+> 当前目标：个人/小团队可靠使用的 Beta
+> 发布状态：NOT CLEARED；必须通过 Stage 1-3 gates（见 docs/superpowers/plans/2026-06-18-beta-reliability.md）
 > 产品形态：Spec Files + CLI Executor + Agent Skill（四层架构，不上 Web/DB/协作）
-> 产品执行基线：本文档（2026-06-17，不再讨论，进入执行）
+> 生产级改造：明确不在本轮范围，待 Beta 使用证据成立后评估
+> Beta 退出标准：见末尾 Beta Milestone 节
+> 产品执行基线：本文档 + Beta Reliability Plan（可讨论，持续更新）
 
 ## 交付说明
 
@@ -528,5 +532,39 @@ Artifacts                   ← resolved-task.json / message-plan.json / PNG / H
 4. **Hard Constraint 冲突报错不覆盖** — 编译失败比静默安全。
 5. **不以输出格式数量衡量进展** — M0 验证的是数据主干的可靠性，不是输出文件的多少。
 6. **不以社区仓库集成数量衡量进展** — 复用的是方法论，不是代码复刻。
+
+---
+
+## 八、Beta Milestone（新增）
+
+> **Period:** Stage 1-3, estimated 4-6 focused days
+> **Target:** Personal/small-team usable Beta (not production)
+> **Prerequisites:** M0-M3 alpha pipeline implemented
+
+### Beta 退出标准
+
+| # | 标准 | 验证方式 |
+|---|------|----------|
+| 1 | 新用户从 clean checkout 仅凭 README 完成安装和首次离线 campaign | Mixed: README 引导 + CI 复现 |
+| 2 | 六类 spec 全部拒绝缺失必填/错误类型/未知字段/断开引用/不支持的 schema 版本，输出结构化诊断 | Automated |
+| 3 | 两个品牌至少 4 个 campaign 无需 Python 代码变更即可构建 | Mixed: fixture + evidence report |
+| 4 | 同一离线输入在同 OS/Python 上产生字节一致产物（PNG 同目标校验和） | Automated |
+| 5 | 有序和并发 campaign 构建各自隔离、不互相读取 build 目录或 manifest | Automated |
+| 6 | 缺失素材/证据/模板/browser 依赖按诊断契约失败；缺失凭据仅在请求在线模式时报错 | Automated |
+| 7 | 每个客观输出宣称使用兼容的事实模板+有效事实 ID，证据文件存在；事实文本从 Product Facts 渲染，非 LLM 编造 | Automated |
+| 8 | 五类修改任务满足变更边界与精确模型调用预算 | Mixed |
+| 9 | 至少一位非作者测试者通过第二品牌输出的验收 rubric | Manual |
+| 10 | CI 在 Ubuntu 24.04 和 macOS 14 上运行单元/集成/clean-clone smoke/离线 E2E 测试 | Automated |
+| 11 | 在线生成通过记录良好的 happy path + 凭据/超时/限流/畸形响应/提供商错误案例，无隐式降级 | Mixed |
+
+### 不在本轮范围
+
+- 生产级多租户、认证、授权、隔离
+- Web UI、素材库、审批流、协作
+- 新渠道和新模板（增加表面积不验证核心方法）
+- 模型提供商抽象框架（仅支持 Beta trial 所需提供商）
+- 高可用部署、队列、数据库、可观测、SLO
+- 包索引发布（GitHub prerelease 即可）
+- 跨版本 schema 迁移和向后兼容（Beta 只支持 schema version 1）
 7. PPTX/MP4/docx 移出主干，不作为产品里程碑。
 8. 每次变更只更新一个状态源：本文档为产品基线。

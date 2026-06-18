@@ -3,7 +3,8 @@
 > 报告日期：2026-06-17
 > 基线：PRODUCT-PLAN.md v2.1
 > 前序：M0-REVIEW.md
-> 状态：M1 完成，M2 就绪
+> **Status: Historical implementation note — does not prove Beta readiness.**
+> **Authoritative gates: PRODUCT-PLAN.md and docs/superpowers/plans/2026-06-18-beta-reliability.md.**
 
 ---
 

@@ -226,15 +226,35 @@ class TestOfflineModeExplicit(unittest.TestCase):
     """P0-1: dry-run 必须显式使用 --offline"""
 
     def test_offline_only_with_flag(self):
-        # Test that render_content exits on copy gen failure without --dry-run
-        # (can't fully test without API, but verify the flag routing)
-        import subprocess
-        result = subprocess.run(
-            [sys.executable, "scripts/render_content.py", "--dry-run", "--resolved", ".build/resolved-task.json"],
-            capture_output=True, text=True, cwd=SCRIPTS_DIR.parent,
-        )
-        # Should still work since resolved-task exists from prior build
-        self.assertIn("Content mode: dry-run fallback", result.stdout)
+        """Verify --dry-run produces offline content without .build dependency"""
+        import json
+        from render_content import render_content
+
+        tmp = Path(tempfile.mkdtemp())
+        message_plan = {
+            "primary_benefit": {"statement": "Test benefit", "id": "test_benefit"},
+            "secondary_benefits": [],
+            "proof_points": [],
+            "visual": {"headline": "H", "subtitle": "S"},
+        }
+        resolved = {
+            "campaign": {"name": "offline-test"},
+            "brand": {
+                "name": "T", "category": "electronics",
+                "colors": {"primary": "#000", "secondary": "#666", "accent": "#888", "background": "#FFF"},
+                "typography": {"latin": {"heading": "Inter", "body": "Inter"}},
+            },
+            "visual_spec": {"product_image": {"source_required": False}, "scene_policy": {}},
+            "content_spec": {"claim_rules": {"forbidden": []}, "message_hierarchy": {}},
+            "product": {"name": "T", "facts": {}, "assets": {}},
+            "output_targets": [
+                {"type": "content", "content_type": "product_title", "channel": "tmall", "constraints": {}},
+            ],
+        }
+        result = render_content(resolved, tmp, message_plan, dry_run=True)
+        self.assertIn("product_title", str(result))
+        output_files = list(tmp.rglob("*"))
+        self.assertGreater(len(output_files), 0, "Offline render should produce files")
 
 
 if __name__ == "__main__":

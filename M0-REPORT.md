@@ -2,6 +2,8 @@
 
 > 评估日期：2026-06-17
 > 评估基线：PRODUCT-PLAN.md v2.1
+> **Status: Historical implementation note — does not prove Beta readiness.**
+> **Authoritative gates: PRODUCT-PLAN.md and docs/superpowers/plans/2026-06-18-beta-reliability.md.**
 
 ---
 

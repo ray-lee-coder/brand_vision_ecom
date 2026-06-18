@@ -3,6 +3,8 @@
 > 评审日期：2026-06-17
 > 基线：PRODUCT-PLAN.md v2.1
 > 前版：M0-REPORT.md
+> **State: Historical implementation note — does not prove Beta readiness.**
+> **Authoritative gates: PRODUCT-PLAN.md and docs/superpowers/plans/2026-06-18-beta-reliability.md.**
 
 ---
 
