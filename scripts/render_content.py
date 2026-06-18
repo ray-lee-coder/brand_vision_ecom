@@ -115,7 +115,8 @@ def render_content(resolved, output_dir, message_plan, dry_run=False):
                         "status": fact_data.get("status", "unknown"),
                     })
                 while len(bullets) < bullet_count:
-                    bullets.append(f"· 品质保障，安心选购")
+                    # Don't pad with generic filler — stop at available facts
+                    break
                 bullets = bullets[:bullet_count]
                 text = "\n".join(bullets)
 
