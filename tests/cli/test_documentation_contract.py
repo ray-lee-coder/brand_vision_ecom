@@ -47,3 +47,4 @@ def test_runtime_http_dependency_is_declared():
     requirements = (REPO_ROOT / "requirements.txt").read_text().splitlines()
 
     assert any(line.startswith("requests==") for line in requirements)
+    assert "urllib3==1.26.20" in requirements
