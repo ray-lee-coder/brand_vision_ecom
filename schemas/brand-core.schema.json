@@ -37,12 +37,21 @@
             "body": { "type": "string" }
           },
           "required": ["heading", "body"]
+        },
+        "chinese": {
+          "type": "object",
+          "properties": {
+            "heading": { "type": "string" },
+            "body": { "type": "string" }
+          },
+          "required": ["heading", "body"]
         }
       }
     },
     "logo": {
       "type": "object",
       "properties": {
+        "file": { "type": "string" },
         "min_size_px": { "type": "integer", "minimum": 1 },
         "clear_space_px": { "type": "integer", "minimum": 0 },
         "allowed_backgrounds": {
@@ -69,6 +78,20 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "references": {
+      "type": "object",
+      "properties": {
+        "approved_visuals": { "type": "array", "items": { "type": "string" } },
+        "approved_copy": { "type": "array", "items": { "type": "string" } }
       }
     }
   },
