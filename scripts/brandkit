@@ -22,7 +22,7 @@ for arg in "$@"; do
     *) PASSTHROUGH+=("$arg") ;;
   esac
 done
-set -- "${PASSTHROUGH[@]}"
+set -- "${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}"
 
 do_compile() {
   local campaign="$1"

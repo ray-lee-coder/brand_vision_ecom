@@ -14,4 +14,5 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m playwright install chromium
       - run: python -m pytest -q
-      - run: bash scripts/brandkit build tests/fixtures/campaigns/acme-launch.yaml --offline
+      - run: bash scripts/brandkit build campaigns/618-launch.yaml --offline
+      - run: bash scripts/brandkit build-all --offline

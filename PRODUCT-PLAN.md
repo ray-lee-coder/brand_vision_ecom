@@ -537,9 +537,19 @@ Artifacts                   ← resolved-task.json / message-plan.json / PNG / H
 
 ## 八、Beta Milestone（新增）
 
-> **Period:** Stage 1-3, estimated 4-6 focused days
+> **Period:** Stage 1-3, estimated 10-15 focused engineer days, plus non-author tester scheduling
 > **Target:** Personal/small-team usable Beta (not production)
-> **Prerequisites:** M0-M3 alpha pipeline implemented
+> **Prerequisites:** M0-M3 alpha components exist; their historical reports are not Beta evidence
+
+### 当前 Gate 状态（2026-06-18 复评）
+
+| Gate | 状态 | 退出条件 |
+|---|---|---|
+| Stage 1: Executable Contract | PARTIAL | 全部已知 P1 都有有效回归测试，CI 引用真实 fixture，测试无 XPASS/XFAIL |
+| Stage 2: Beta Foundation | FAIL | clean clone 的单 campaign 与 `build-all --offline` 均通过，契约、隔离和验证失败关闭 |
+| Stage 3: Usage Evidence | NOT STARTED | 第二品牌、四个 campaign、五类修改任务与非作者验收证据齐全 |
+
+状态只由可复现 gate 证据更新，不由提交信息、文件数量或 M0-M3 历史报告更新。
 
 ### Beta 退出标准
 

@@ -227,12 +227,11 @@ outputs:
     assert result["status"] != "ok", "Missing evidence file must block compilation"
 
 
-# --- P1-14/15: Unknown channel detection ---
-# (redundant with existing test_audit, but committed as a P1 regression marker)
+# --- P1-14/15: Channel validation contract ---
+# (Currently uses hardcoded profiles — P1 not yet fixed)
 
-@pytest.mark.xfail(reason="P1: verification validates against hardcoded profiles, not compiled channel YAML (validate_channel.py:12,56)")
 def test_channel_validation_uses_compiled_contract():
-    """Channel validation must read from compiled channel YAML, not hardcoded profiles."""
+    """TODO: once validate_channel.py reads compiled YAML, this test must verify it."""
     from validate_channel import validate_channel
     tmp = Path(tempfile.mktemp(suffix=".md"))
     # A subtle violation: literary tone without parameter-first structure
@@ -242,3 +241,82 @@ def test_channel_validation_uses_compiled_contract():
     # The compiled tmall contract would use channel YAML rules, not hardcoded profiles
     # For now, this just verifies the function shape
     assert "channel" in result
+
+
+# --- R1: Schema-path validation — unknown root field must be rejected ---
+@pytest.mark.xfail(strict=True, reason="P1: compile.py validate_document() result is discarded")
+def test_schema_rejects_unknown_root_field():
+    """Campaign with unknown root-level field must fail compilation."""
+    from compile import compile_campaign
+    d = Path(tempfile.mkdtemp())
+    (d / "campaigns").mkdir(parents=True)
+    (d / "brands" / "testbrand" / "products").mkdir(parents=True)
+    (d / "channels").mkdir()
+    (d / "brands" / "testbrand" / "brand-core.yaml").write_text(BRAND_CORE)
+    (d / "brands" / "testbrand" / "visual-spec.yaml").write_text(VISUAL_SPEC)
+    (d / "brands" / "testbrand" / "content-spec.yaml").write_text(CONTENT_SPEC)
+    (d / "brands" / "testbrand" / "products" / "test.yaml").write_text("product:\n  id: test\n  name: Test\n  facts: {}\n  assets: {}")
+    (d / "channels" / "tmall.yaml").write_text(CHANNEL_TMALL)
+    (d / "templates").mkdir(exist_ok=True)
+    (d / "templates" / "packshot.html").write_text("<html></html>")
+    # Campaign with a completely unknown root field (not in schema)
+    (d / "campaigns" / "test.yaml").write_text("""campaign:
+  name: test
+  brand_ref: brands/testbrand/brand-core.yaml
+  product_ref: brands/testbrand/products/test.yaml
+
+outputs:
+  visual:
+    - type: packshot
+      channel: tmall
+      format: png
+  content: []
+
+unknown_field: should be rejected
+""")
+    result = compile_campaign(str(d / "campaigns" / "test.yaml"))
+    assert result["status"] != "ok", "Unknown root field must fail compilation"
+
+
+# --- R1: Zero-artifact verification must fail ---
+@pytest.mark.xfail(strict=True, reason="P1: verify exits 0 when no campaign output exists")
+def test_zero_artifact_verification_fails():
+    """Verify with no artifacts must exit non-zero."""
+    import subprocess
+    # Ensure clean state
+    clean = subprocess.run(["bash", "scripts/brandkit", "clean"], capture_output=True, cwd=Path.cwd())
+    result = subprocess.run(
+        [sys.executable, "scripts/verify.py"],
+        capture_output=True, text=True, cwd=Path.cwd(),
+    )
+    assert result.returncode != 0, "Verify must fail with zero artifacts"
+
+
+# --- R1: Missing provenance must fail ---
+@pytest.mark.xfail(strict=True, reason="P1: verify exits 0 when provenance file is missing")
+def test_missing_provenance_fails():
+    """Verify after removing a provenance file must exit non-zero."""
+    import subprocess
+    # Build first, then remove one provenance, then verify
+    build_result = subprocess.run(
+        ["bash", "scripts/brandkit", "build", "campaigns/618-launch.yaml", "--offline"],
+        capture_output=True, text=True, cwd=Path.cwd(),
+    )
+    if build_result.returncode != 0:
+        pytest.skip("Build prerequisite failed — cannot test provenance")
+    # Find and remove a provenance file
+    prov_files = list(Path("output").rglob("*.provenance.json"))
+    if not prov_files:
+        pytest.skip("No provenance files found")
+    removed = prov_files[0]
+    removed.unlink()
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/verify.py"],
+            capture_output=True, text=True, cwd=Path.cwd(),
+        )
+        assert result.returncode != 0, f"Verify must fail after removing {removed}"
+    finally:
+        # Restore or rebuild
+        subprocess.run(["bash", "scripts/brandkit", "build", "campaigns/618-launch.yaml", "--offline"],
+                       capture_output=True, cwd=Path.cwd())

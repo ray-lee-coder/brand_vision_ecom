@@ -1,6 +1,30 @@
 # BrandKit Beta Reliability Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+>
+> **Reassessment 2026-06-18:** Stage 1 is partial, Stage 2 is not complete, and Stage 3 has not started. Beta release remains **NOT CLEARED**. See `docs/reviews/2026-06-18-beta-reassessment.md`.
+
+## Current Execution Contract
+
+Commit labels and file presence do not complete a task. A task is complete only when its focused tests and the applicable real CLI gates pass from a clean checkout.
+
+| Batch | Current status | Blocking evidence |
+|---|---|---|
+| R1 Truth layer | PARTIAL | `20 passed, 1 xpassed`; CI references a missing campaign; `build-all --offline` test does not require success |
+| R2 Active contracts | FAIL | Production compiler discards schema errors and does not validate five input document types |
+| R3 Run ownership | NOT DONE | `.build/`, `output/`, reports, and manifest remain shared mutable paths |
+| R4 Trust boundary | FAIL | Zero artifacts/missing provenance pass; channel rules and visual facts remain hardcoded |
+| R5 Product evidence | NOT STARTED | No second brand or non-author acceptance evidence |
+
+Mandatory gates after each batch:
+
+```bash
+python3 -m pytest -q
+bash scripts/brandkit build campaigns/618-launch.yaml --offline
+bash scripts/brandkit build-all --offline
+```
+
+R3-R5 additionally require clean-clone and ordered/concurrent isolation tests. The detailed recovery order and acceptance evidence are maintained in `docs/reviews/2026-06-18-beta-reassessment.md`.
 
 **Goal:** 将 BrandKit 从可运行的 Alpha/Demo 收敛为可供个人和小团队可靠使用、具备真实证据的 Beta。
 
