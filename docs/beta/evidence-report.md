@@ -7,7 +7,7 @@
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Test suite | Full pytest in the R6 worktree | 60 passed; clean-clone result recorded after candidate commit |
+| Test suite | Full pytest in the R6 worktree and a fresh Python 3.9 virtualenv clone | 61 passed in both; no warnings |
 | Offline single build | `bash scripts/brandkit build campaigns/618-launch.yaml --offline` | PASS |
 | Offline all campaigns | `bash scripts/brandkit build-all --offline` | PASS (5 campaigns) |
 | Concurrent isolation | `tests/integration/test_run_isolation.py` | Automated |
