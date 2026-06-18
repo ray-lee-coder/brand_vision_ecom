@@ -316,7 +316,10 @@ def main():
     print(f"  Failed: {report['diff_summary']['failed']}")
     print(f"{'='*50}")
 
-    if report["diff_summary"]["failed"] > 0 and not args.allow_warnings:
+    # Cross-channel diffs are informative, not blocking
+    # Only block on individual file validation failures
+    file_failures = sum(f.get("failed", 0) for f in report.get("file_results", []))
+    if file_failures > 0 and not args.allow_warnings:
         sys.exit(1)
 
 

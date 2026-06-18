@@ -70,10 +70,12 @@ PRODUCT_FACTS = """product:
 
 CHANNEL_TMALL = """channel:
   id: tmall
-  visual: {}
-  content:
-    product_title:
-      max_chars: 60
+visual:
+  ratios: ['1:1']
+  product_coverage: '50%-70%'
+content:
+  product_title:
+    max_chars: 60
 """
 
 

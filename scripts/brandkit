@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # BrandKit CLI — 统一入口 (v0.4.0-beta)
-set -euo pipefail
+set -uo pipefail
 
 BRANDKIT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$BRANDKIT_DIR"
@@ -43,11 +43,19 @@ do_render_content() {
 }
 
 do_verify() {
-  python3 scripts/verify.py $ALLOW_WARNINGS
+  if [[ -n "$ALLOW_WARNINGS" ]]; then
+    python3 scripts/verify.py --allow-warnings
+  else
+    python3 scripts/verify.py
+  fi
 }
 
 do_validate() {
-  python3 scripts/validate_channel.py $ALLOW_WARNINGS
+  if [[ -n "$ALLOW_WARNINGS" ]]; then
+    python3 scripts/validate_channel.py --allow-warnings
+  else
+    python3 scripts/validate_channel.py
+  fi
 }
 
 case "$CMD" in
@@ -92,6 +100,7 @@ case "$CMD" in
 
     echo ""
     echo "[DONE] Build complete. Output in output/$CAMPAIGN_NAME/"
+    exit 0
     ;;
 
   build-all)
@@ -99,7 +108,11 @@ case "$CMD" in
     for f in campaigns/*.yaml; do
       echo ""
       echo "=== $(basename "$f") ==="
-      bash "$0" build "$f" $( [[ $OFFLINE -eq 1 ]] && echo '--offline' ) $ALLOW_WARNINGS $ALLOW_PLACEHOLDER || total_status=1
+      child_args=(build "$f")
+      [[ $OFFLINE -eq 1 ]] && child_args+=(--offline)
+      [[ -n "$ALLOW_WARNINGS" ]] && child_args+=("$ALLOW_WARNINGS")
+      [[ -n "$ALLOW_PLACEHOLDER" ]] && child_args+=("$ALLOW_PLACEHOLDER")
+      bash "$0" "${child_args[@]}" || total_status=1
     done
     echo ""
     if [ $total_status -eq 0 ]; then

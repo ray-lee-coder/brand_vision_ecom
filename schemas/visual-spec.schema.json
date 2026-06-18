@@ -48,7 +48,7 @@
     "scene_policy": {
       "type": "object",
       "patternProperties": {
-        "^[a-z_]+$": {
+        "^[a-z_][a-z0-9_-]*$": {
           "type": "object",
           "properties": {
             "html_dominant": { "type": "boolean" },

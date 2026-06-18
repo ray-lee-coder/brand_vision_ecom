@@ -7,49 +7,61 @@
     "channel": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "visual": {
+        "id": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "visual": {
+      "type": "object",
+      "properties": {
+        "ratios": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\d+:\\d+$" }
+        },
+        "product_coverage": { "type": "string" },
+        "safe_margin_px": { "type": "integer", "minimum": 0 },
+        "text_density": { "type": "string", "enum": ["low", "medium", "high"] }
+      }
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "product_title": {
           "type": "object",
           "properties": {
-            "ratios": {
-              "type": "array",
-              "items": { "type": "string", "pattern": "^\\d+:\\d+$" }
-            },
-            "product_coverage": { "type": "string" },
-            "safe_margin_px": { "type": "integer", "minimum": 0 },
-            "text_density": { "type": "string", "enum": ["low", "medium", "high"] }
+            "max_chars": { "type": "integer", "minimum": 1 }
           }
         },
-        "content": {
+        "bullets": {
           "type": "object",
           "properties": {
-            "product_title": {
-              "type": "object",
-              "properties": {
-                "max_chars": { "type": "integer", "minimum": 1 }
-              }
-            },
-            "bullets": {
-              "type": "object",
-              "properties": {
-                "count": { "type": "integer", "minimum": 1 },
-                "max_chars_each": { "type": "integer", "minimum": 1 }
-              }
-            },
-            "forbidden_patterns": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "style": { "type": "string", "enum": ["direct_conversion", "experiential", "storytelling"] },
-            "allowed": { "type": "array", "items": { "type": "string" } },
-            "avoid": { "type": "array", "items": { "type": "string" } }
-          },
-          "required": ["product_title"]
-        }
+            "count": { "type": "integer", "minimum": 1 },
+            "max_chars_each": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "forbidden_patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "style": { "type": "string", "enum": ["direct_conversion", "experiential", "storytelling", "experience_story"] },
+        "allowed": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
       },
-      "required": ["id", "content"]
+      "required": []
+    },
+    "note_title": {
+      "type": "object",
+      "properties": {
+        "max_chars": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "note_body": {
+      "type": "object",
+      "properties": {
+        "max_chars": { "type": "integer", "minimum": 1 }
+      }
     }
   },
-  "required": ["channel"],
+  "required": ["channel", "content"],
   "additionalProperties": false
 }
